@@ -260,14 +260,22 @@ tfoot td{font-weight:700;color:var(--text);font-size:13px;}
       <div class="table-card">
         <div class="table-card-header">渠道明细</div>
         <div class="table-wrap"><table>
-          <thead><tr><th>渠道</th><th>消耗(元)</th><th>展现量</th><th>留资量</th><th>留资成本(元)</th><th>日增</th><th>环比</th></tr></thead>
+          <thead><tr><th>渠道</th><th>消耗(元)</th><th>消耗环比</th><th>展现量</th><th>留资量</th><th>留资量环比</th><th>留资成本(元)</th><th>留资成本环比</th></tr></thead>
           <tbody id="adflow-body"></tbody>
           <tfoot><tr id="adflow-foot"></tr></tfoot>
         </table></div>
       </div>
       <div class="chart-card">
-        <div class="chart-title">各渠道消耗趋势（折线图）</div>
-        <div class="chart-wrap"><canvas id="ch-adflow" role="img" aria-label="投流消耗趋势折线图">消耗趋势</canvas></div>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+          <span class="chart-title" style="margin-bottom:0">各渠道趋势折线图</span>
+          <div style="display:flex;gap:4px;">
+            <button id="adflow-btn-spend" onclick="setAdflowMetric('spend')" style="padding:4px 10px;border:1px solid var(--border2);border-radius:4px;font-size:11px;cursor:pointer;transition:all .15s;background:var(--brand2);color:#fff;">消耗</button>
+            <button id="adflow-btn-impressions" onclick="setAdflowMetric('impressions')" style="padding:4px 10px;border:1px solid var(--border2);border-radius:4px;font-size:11px;cursor:pointer;transition:all .15s;background:transparent;color:var(--muted);">展现量</button>
+            <button id="adflow-btn-leads" onclick="setAdflowMetric('leads')" style="padding:4px 10px;border:1px solid var(--border2);border-radius:4px;font-size:11px;cursor:pointer;transition:all .15s;background:transparent;color:var(--muted);">留资量</button>
+            <button id="adflow-btn-cpl" onclick="setAdflowMetric('cpl')" style="padding:4px 10px;border:1px solid var(--border2);border-radius:4px;font-size:11px;cursor:pointer;transition:all .15s;background:transparent;color:var(--muted);">留资成本</button>
+          </div>
+        </div>
+        <div class="chart-wrap"><canvas id="ch-adflow" role="img" aria-label="投流趋势折线图">趋势图</canvas></div>
       </div>
     </div>
     <div class="module-divider"></div>
@@ -282,7 +290,7 @@ tfoot td{font-weight:700;color:var(--text);font-size:13px;}
       <div class="table-card">
         <div class="table-card-header">渠道明细</div>
         <div class="table-wrap"><table>
-          <thead><tr><th>渠道</th><th>发文数</th><th>浏览量</th><th>互动率</th><th>复用量</th><th>粉丝总量</th><th>粉丝日增</th><th>获客</th><th>互动率环比</th></tr></thead>
+          <thead><tr><th>渠道</th><th>发文数</th><th>发文数环比</th><th>浏览量</th><th>浏览量环比</th><th>互动量</th><th>互动率</th><th>粉丝总量</th><th>粉丝总量环比</th><th>粉丝日增</th></tr></thead>
           <tbody id="media-body"></tbody>
           <tfoot><tr id="media-foot"></tr></tfoot>
         </table></div>
@@ -622,6 +630,35 @@ function loadDB(){
       renderAll();
     });
 }
+function deleteTask(idx){
+  openModal(`
+    <div style="font-size:15px;font-weight:700;color:var(--red);margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid var(--border);">🗑 删除任务</div>
+    <p style="font-size:13px;color:var(--text2);margin-bottom:4px;">即将删除任务：<strong style="color:var(--text)">${DB.strategy[${idx}]?.task||''}</strong></p>
+    <p style="font-size:12px;color:var(--muted);margin-bottom:14px;">此操作不可撤销。请输入管理员密码确认：</p>
+    <input id="del-task-pwd" type="password" placeholder="请输入密码"
+      style="width:100%;background:var(--bg);border:1px solid var(--border2);border-radius:6px;padding:9px 12px;font-size:13px;font-family:var(--mono);color:var(--text);outline:none;margin-bottom:6px;"
+      onkeydown="if(event.key==='Enter')confirmDeleteTask(${idx})"
+      onfocus="this.style.borderColor='var(--red)'" onblur="this.style.borderColor='var(--border2)'">
+    <div id="del-task-err" style="color:var(--red);font-size:12px;min-height:18px;margin-bottom:10px;"></div>
+    <div style="display:flex;gap:8px;">
+      <button onclick="confirmDeleteTask(${idx})" style="flex:1;padding:9px;background:var(--red);color:#fff;border:none;border-radius:6px;font-size:13px;cursor:pointer;font-family:var(--sans);">确认删除</button>
+      <button onclick="closeModal()" style="padding:9px 16px;background:transparent;border:1px solid var(--border2);border-radius:6px;font-size:13px;cursor:pointer;color:var(--text2);">取消</button>
+    </div>
+  `);
+  setTimeout(()=>{ const i=document.getElementById('del-task-pwd'); if(i) i.focus(); },100);
+}
+async function confirmDeleteTask(idx){
+  const pwd=document.getElementById('del-task-pwd');
+  if(!pwd||pwd.value!=='Noah2025!'){
+    const err=document.getElementById('del-task-err');
+    if(err) err.textContent='密码错误';
+    return;
+  }
+  closeModal();
+  DB.strategy.splice(idx,1);
+  await saveDB();
+  renderStrategy();
+}
 function setGHToken(){
   const cur=getToken();
   const curEl=document.getElementById('token-current');
@@ -652,11 +689,33 @@ function clearTokenFromModal(){
   document.getElementById('token-modal').style.display='none';
 }
 function clearData(){
-  if(!confirm('确定清空所有看板数据？')) return;
+  const pwd=document.getElementById('clear-pwd-input');
+  if(!pwd){ openClearModal(); return; }
+  if(pwd.value!=='Noah2025!'){ 
+    document.getElementById('clear-pwd-err').textContent='密码错误';
+    return;
+  }
+  closeModal();
   DB={adflow:[],media:[],events:[],ai:[],sentiment:[],strategy:[]};
   saveDB(); renderAll();
   document.getElementById('last-update').textContent='数据已清空';
   const b=document.getElementById('share-btn'); if(b) b.style.display='none';
+}
+function openClearModal(){
+  openModal(`
+    <div style="font-size:15px;font-weight:700;color:var(--red);margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid var(--border);">🗑 清空所有数据</div>
+    <p style="font-size:13px;color:var(--text2);margin-bottom:14px;">此操作将清空看板所有模块的数据，且无法撤销。请输入管理员密码确认：</p>
+    <input id="clear-pwd-input" type="password" placeholder="请输入密码"
+      style="width:100%;background:var(--bg);border:1px solid var(--border2);border-radius:6px;padding:9px 12px;font-size:13px;font-family:var(--mono);color:var(--text);outline:none;margin-bottom:6px;"
+      onkeydown="if(event.key==='Enter')clearData()"
+      onfocus="this.style.borderColor='var(--red)'" onblur="this.style.borderColor='var(--border2)'">
+    <div id="clear-pwd-err" style="color:var(--red);font-size:12px;min-height:18px;margin-bottom:10px;"></div>
+    <div style="display:flex;gap:8px;">
+      <button onclick="clearData()" style="flex:1;padding:9px;background:var(--red);color:#fff;border:none;border-radius:6px;font-size:13px;cursor:pointer;font-family:var(--sans);">确认清空</button>
+      <button onclick="closeModal()" style="padding:9px 16px;background:transparent;border:1px solid var(--border2);border-radius:6px;font-size:13px;cursor:pointer;color:var(--text2);">取消</button>
+    </div>
+  `);
+  setTimeout(()=>{ const i=document.getElementById('clear-pwd-input'); if(i) i.focus(); },100);
 }
 
 // ══ DATE HELPERS ══
@@ -832,6 +891,47 @@ function parseAndMerge(wb){
   return updated;
 }
 
+
+// ══ Period comparison helpers ══
+function getComparisonPeriod(fromStr, toStr){
+  // Returns {from, to} for the previous equivalent period
+  if(!fromStr || !toStr) return null;
+  const d1=new Date(fromStr+'T00:00:00'), d2=new Date(toStr+'T00:00:00');
+  const diffMs=d2-d1+86400000; // inclusive days in ms
+  const prevTo=new Date(d1-86400000);
+  const prevFrom=new Date(prevTo-diffMs+86400000);
+  return {from:localStr(prevFrom), to:localStr(prevTo)};
+}
+function getFilterRange(){
+  const now=new Date();
+  let from='', to=localStr(now);
+  if(range==='yesterday'){ const y=new Date(now); y.setDate(y.getDate()-1); from=to=localStr(y); }
+  else if(range==='week'){ const w=new Date(now); w.setDate(w.getDate()-w.getDay()+1); from=localStr(w); }
+  else if(range==='month'){ const m=new Date(now); m.setDate(1); from=localStr(m); }
+  else if(range==='quarter'){ const q=new Date(now); q.setMonth(Math.floor(q.getMonth()/3)*3,1); from=localStr(q); }
+  else if(range==='half'){ const h=new Date(now); h.setMonth(h.getMonth()-6); from=localStr(h); }
+  else if(range==='year'){ const y=new Date(now); y.setMonth(0,1); from=localStr(y); }
+  else if(range==='custom'){ from=customFrom; to=customTo; }
+  else return {from:null, to:null}; // 'all'
+  return {from, to};
+}
+function sumByChannel(records, field, channel){
+  return records.filter(r=>r.channel===channel).reduce((s,r)=>s+(N(r[field])||0),0);
+}
+function sumByKey(records, keyField, keyVal, field){
+  return records.filter(r=>String(r[keyField])===String(keyVal)).reduce((s,r)=>s+(N(r[field])||0),0);
+}
+function calcDelta(curr, prev){
+  if(!prev || prev===0) return null;
+  return Math.round((curr/prev-1)*100);
+}
+function deltaTag(pct){
+  if(pct===null) return '<span style="color:var(--muted);font-size:11px;">—</span>';
+  const cls=pct>0?'du':pct<0?'dd':'df';
+  const arrow=pct>0?'↑':pct<0?'↓':'→';
+  return `<span class="kpi-delta ${cls}">${arrow} ${Math.abs(pct)}%</span>`;
+}
+
 // ══ RENDER ALL ══
 function renderAll(){ renderAdflow(); renderMedia(); renderEvents(); renderAI(); renderSentiment(); renderStrategy(); }
 
@@ -910,49 +1010,130 @@ function donutChart(id,labels,data,colors){
 }
 
 // ══ 01 ADFLOW ══
+let adflowChartMetric='spend'; // current chart metric
 function renderAdflow(){
-  // For line chart: use full data grouped by channel over time
   const allFilt=filterDate(DB.adflow);
-  const data=aggBy(allFilt,'channel',['spend','impressions','leads','daily_new']);
+  const data=aggBy(allFilt,'channel',['spend','impressions','leads']);
   const body=document.getElementById('adflow-body'), foot=document.getElementById('adflow-foot');
-  if(!data.length){ body.innerHTML=emptyRow(7); foot.innerHTML=''; document.getElementById('adflow-kpi').innerHTML=''; dc('ch-adflow'); return; }
-  const ts=sumF(data,'spend'),ti=sumF(data,'impressions'),tl=sumF(data,'leads'),td=sumF(data,'daily_new');
+  if(!data.length){ body.innerHTML=emptyRow(8); foot.innerHTML=''; document.getElementById('adflow-kpi').innerHTML=''; dc('ch-adflow'); return; }
+
+  // Compute comparison period for auto 环比
+  const {from:curFrom, to:curTo}=getFilterRange();
+  let prevData=[];
+  if(curFrom){
+    const prev=getComparisonPeriod(curFrom,curTo);
+    if(prev){
+      const prevFilt=DB.adflow.filter(r=>{ const d=String(r.date||'').slice(0,10); return isValidDate(d)&&d>=prev.from&&d<=prev.to; });
+      prevData=aggBy(prevFilt,'channel',['spend','impressions','leads']);
+    }
+  }
+
+  const ts=sumF(data,'spend'),ti=sumF(data,'impressions'),tl=sumF(data,'leads');
+  const prevTs=prevData.reduce((s,r)=>s+(N(r.spend)||0),0);
+  const prevTl=prevData.reduce((s,r)=>s+(N(r.leads)||0),0);
+  const tcpl=tl?ts/tl:0, prevTcpl=prevTl?(prevTs/prevTl):0;
+
   document.getElementById('adflow-kpi').innerHTML=
-    kpi('总消耗(元)','¥'+fmtStrict(ts),'c-gold')+kpi('总展现量',fmtStrict(ti),'c-blue')+
-    kpi('总留资量',fmtStrict(tl),'c-green')+kpi('平均留资成本(元)',tl?'¥'+fmtStrict(ts/tl):'-','c-teal')+
-    kpi('日增合计','+'+fmtStrict(td),'c-purple')+kpi('活跃渠道',data.length,'c-blue');
+    kpi('总消耗(元)','¥'+fmtStrict(ts),'c-gold')+
+    kpi('总展现量',fmtStrict(ti),'c-blue')+
+    kpi('总留资量',fmtStrict(tl),'c-green')+
+    kpi('平均留资成本(元)',tl?'¥'+fmtStrict(tcpl):'-','c-teal')+
+    kpi('活跃渠道',data.length,'c-blue');
+
   body.innerHTML=data.map(r=>{
     const cpl=(N(r.leads)&&N(r.spend))?(N(r.spend)/N(r.leads)):null;
-    return `<tr><td class="strong">${r.channel}</td><td class="c-gold">¥${fmtStrict(r.spend)}</td><td>${fmtStrict(r.impressions)}</td><td class="c-green">${fmtStrict(r.leads)}</td><td>${cpl?'¥'+fmtStrict(cpl):'-'}</td><td>${fmtStrict(r.daily_new||0)}</td><td>${delta(r.delta_pct)}</td></tr>`;
+    const prev=prevData.find(p=>p.channel===r.channel)||{};
+    const prevSpend=N(prev.spend)||0, prevLeads=N(prev.leads)||0;
+    const prevCpl=prevLeads?(prevSpend/prevLeads):0;
+    const spendD=calcDelta(N(r.spend)||0,prevSpend);
+    const leadsD=calcDelta(N(r.leads)||0,prevLeads);
+    const cplD=cpl&&prevCpl?calcDelta(cpl,prevCpl):null;
+    return `<tr>
+      <td class="strong">${r.channel}</td>
+      <td class="c-gold">¥${fmtStrict(r.spend)}</td>
+      <td>${deltaTag(spendD)}</td>
+      <td>${fmtStrict(r.impressions)}</td>
+      <td class="c-green">${fmtStrict(r.leads)}</td>
+      <td>${deltaTag(leadsD)}</td>
+      <td>${cpl?'¥'+fmtStrict(cpl):'-'}</td>
+      <td>${deltaTag(cplD)}</td>
+    </tr>`;
   }).join('');
-  const tcp=tl?(ts/tl):null;
-  foot.innerHTML=`<td>合计</td><td>¥${fmtStrict(ts)}</td><td>${fmtStrict(ti)}</td><td>${fmtStrict(tl)}</td><td>${tcp?'¥'+fmtStrict(tcp):'-'}</td><td>${fmtStrict(td)}</td><td>—</td>`;
-  // Line chart: each channel's spend over dates
-  const channels=[...new Set(DB.adflow.map(r=>r.channel))];
-  const dates=[...new Set(filterDate(DB.adflow).map(r=>r.date))].sort();
-  lineChart('ch-adflow',dates,channels.map((ch,i)=>({
-    label:ch,color:COLORS[i%COLORS.length],
-    data:dates.map(d=>{ const r=filterDate(DB.adflow).find(x=>x.channel===ch&&x.date===d); return r?N(r.spend):null; })
-  })));
+  const totalCpl=tl?(ts/tl):null;
+  const totSpendD=calcDelta(ts,prevTs), totLeadsD=calcDelta(tl,prevTl), totCplD=totalCpl&&prevTcpl?calcDelta(totalCpl,prevTcpl):null;
+  foot.innerHTML=`<td>合计</td><td>¥${fmtStrict(ts)}</td><td>${deltaTag(totSpendD)}</td><td>${fmtStrict(ti)}</td><td>${fmtStrict(tl)}</td><td>${deltaTag(totLeadsD)}</td><td>${totalCpl?'¥'+fmtStrict(totalCpl):'-'}</td><td>${deltaTag(totCplD)}</td>`;
+
+  renderAdflowChart();
 }
+function renderAdflowChart(){
+  const allFilt=filterDate(DB.adflow);
+  const channels=[...new Set(DB.adflow.map(r=>r.channel))];
+  const dates=[...new Set(allFilt.map(r=>r.date))].sort();
+  const metricLabels={spend:'消耗(元)',impressions:'展现量',leads:'留资量',cpl:'留资成本(元)'};
+  lineChart('ch-adflow',dates,channels.map((ch,i)=>({
+    label:ch, color:COLORS[i%COLORS.length],
+    data:dates.map(d=>{
+      const r=allFilt.find(x=>x.channel===ch&&x.date===d);
+      if(!r) return null;
+      if(adflowChartMetric==='cpl') return (N(r.spend)&&N(r.leads))?Math.round(N(r.spend)/N(r.leads)):null;
+      return N(r[adflowChartMetric]);
+    })
+  })));
+  // Update button states
+  ['spend','impressions','leads','cpl'].forEach(m=>{
+    const btn=document.getElementById('adflow-btn-'+m);
+    if(btn) btn.style.background=m===adflowChartMetric?'var(--brand2)':'transparent';
+    if(btn) btn.style.color=m===adflowChartMetric?'#fff':'var(--muted)';
+  });
+}
+function setAdflowMetric(m){ adflowChartMetric=m; renderAdflowChart(); }
 
 // ══ 02 MEDIA ══
 function renderMedia(){
   const allFilt=filterDate(DB.media);
-  const data=aggBy(allFilt,'channel',['posts','views','interactions','reposts','followers','follower_growth','leads_gen']);
+  const data=aggBy(allFilt,'channel',['posts','views','interactions','followers','follower_growth']);
   const body=document.getElementById('media-body'), foot=document.getElementById('media-foot');
-  if(!data.length){ body.innerHTML=emptyRow(9); foot.innerHTML=''; document.getElementById('media-kpi').innerHTML=''; dc('ch-media-views'); dc('ch-media-growth'); return; }
-  const tv=sumF(data,'views'),tf=sumF(data,'followers'),tfg=sumF(data,'follower_growth'),tl=sumF(data,'leads_gen'),tp=sumF(data,'posts');
+  if(!data.length){ body.innerHTML=emptyRow(10); foot.innerHTML=''; document.getElementById('media-kpi').innerHTML=''; dc('ch-media-views'); dc('ch-media-growth'); return; }
+
+  // Auto 环比
+  const {from:curFrom,to:curTo}=getFilterRange();
+  let prevData=[];
+  if(curFrom){
+    const prev=getComparisonPeriod(curFrom,curTo);
+    if(prev){
+      const prevFilt=DB.media.filter(r=>{ const d=String(r.date||'').slice(0,10); return isValidDate(d)&&d>=prev.from&&d<=prev.to; });
+      prevData=aggBy(prevFilt,'channel',['posts','views','interactions','followers','follower_growth']);
+    }
+  }
+
+  const tv=sumF(data,'views'),tf=sumF(data,'followers'),tfg=sumF(data,'follower_growth'),tp=sumF(data,'posts'),ti=sumF(data,'interactions');
   document.getElementById('media-kpi').innerHTML=
     kpi('总发文数',fmtStrict(tp),'c-blue')+kpi('总浏览量',fmtStrict(tv),'c-gold')+
+    kpi('总互动量',fmtStrict(ti),'c-purple')+
     kpi('粉丝总量',fmtStrict(tf),'c-teal')+kpi('粉丝日增','+'+fmtStrict(tfg),'c-green')+
-    kpi('内容获客',fmtStrict(tl),'c-green')+kpi('活跃渠道',data.length,'c-purple');
+    kpi('活跃渠道',data.length,'c-blue');
+
   body.innerHTML=data.map(r=>{
+    const prev=prevData.find(p=>p.channel===r.channel)||{};
+    const postsD=calcDelta(N(r.posts)||0,N(prev.posts)||0);
+    const viewsD=calcDelta(N(r.views)||0,N(prev.views)||0);
+    const follD=calcDelta(N(r.followers)||0,N(prev.followers)||0);
     const eng=(N(r.views)&&N(r.interactions))?(N(r.interactions)/N(r.views)*100).toFixed(2)+'%':'-';
-    return `<tr><td class="strong">${r.channel}</td><td>${fmtStrict(r.posts||0)}</td><td class="c-gold">${fmtStrict(r.views||0)}</td><td>${eng}</td><td>${fmtStrict(r.reposts||0)}</td><td>${fmtStrict(r.followers||0)}</td><td class="c-green">+${fmtStrict(r.follower_growth||0)}</td><td class="c-green">${fmtStrict(r.leads_gen||0)}</td><td>${delta(r.delta_eng)}</td></tr>`;
+    return `<tr>
+      <td class="strong">${r.channel}</td>
+      <td>${fmtStrict(r.posts||0)}</td>
+      <td>${deltaTag(postsD)}</td>
+      <td class="c-gold">${fmtStrict(r.views||0)}</td>
+      <td>${deltaTag(viewsD)}</td>
+      <td>${fmtStrict(r.interactions||0)}</td>
+      <td>${eng}</td>
+      <td>${fmtStrict(r.followers||0)}</td>
+      <td>${deltaTag(follD)}</td>
+      <td class="c-green">+${fmtStrict(r.follower_growth||0)}</td>
+    </tr>`;
   }).join('');
-  foot.innerHTML=`<td>合计</td><td>${fmtStrict(tp)}</td><td>${fmtStrict(tv)}</td><td>—</td><td>—</td><td>${fmtStrict(tf)}</td><td>+${fmtStrict(tfg)}</td><td>${fmtStrict(tl)}</td><td>—</td>`;
-  // Line charts: views and follower_growth over dates by channel
+  foot.innerHTML=`<td>合计</td><td>${fmtStrict(tp)}</td><td>—</td><td>${fmtStrict(tv)}</td><td>—</td><td>${fmtStrict(ti)}</td><td>—</td><td>${fmtStrict(tf)}</td><td>—</td><td>+${fmtStrict(tfg)}</td>`;
+
   const channels=[...new Set(DB.media.map(r=>r.channel))];
   const dates=[...new Set(allFilt.map(r=>r.date))].sort();
   lineChart('ch-media-views',dates,channels.map((ch,i)=>({
@@ -1084,7 +1265,8 @@ function renderStrategy(){
   el.innerHTML=data.map(t=>{
     const sm=SM[t.status]||SM.not_started;
     const prog=Math.min(100,Math.max(0,(N(t.progress)||0)*100));
-    return `<div class="task-item"><div class="task-row1"><span class="task-name">${t.task}</span><span class="tag ${sm.c}">${sm.l}</span></div><div class="task-desc">${t.description||''}</div><div class="task-row2"><div class="task-prog-wrap"><div class="task-prog-fill" style="width:${prog.toFixed(0)}%;background:${PC2[t.status]||'#CBD5E1'}"></div></div><span class="task-pct">${prog.toFixed(0)}%</span><span class="task-deadline">截止 ${t.deadline||'-'}</span></div></div>`;
+    const ti2=DB.strategy.indexOf(t);
+    return `<div class="task-item"><div class="task-row1"><span class="task-name">${t.task}</span><span class="tag ${sm.c}">${sm.l}</span><button onclick="deleteTask(${ti2})" style="margin-left:auto;background:transparent;border:none;color:var(--muted);cursor:pointer;font-size:14px;padding:2px 6px;border-radius:4px;transition:all .15s;" title="删除此任务" onmouseover="this.style.color='var(--red)';this.style.background='var(--red-bg)'" onmouseout="this.style.color='var(--muted)';this.style.background='transparent'">🗑</button></div><div class="task-desc">${t.description||''}</div><div class="task-row2"><div class="task-prog-wrap"><div class="task-prog-fill" style="width:${prog.toFixed(0)}%;background:${PC2[t.status]||'#CBD5E1'}"></div></div><span class="task-pct">${prog.toFixed(0)}%</span><span class="task-deadline">截止 ${t.deadline||'-'}</span></div></div>`;
   }).join('');
 }
 </script>
