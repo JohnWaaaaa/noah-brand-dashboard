@@ -1,0 +1,969 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>诺亚控股 · 品牌部数据看板</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+SC:wght@400;500;700&family=Noto+Serif+SC:wght@600;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+:root{
+  --bg:#F5F6FA;--white:#FFFFFF;--border:#E4E7EF;--border2:#D0D5E8;
+  --text:#1A1D2E;--text2:#4A5068;--muted:#8B92AD;
+  --brand:#1B3A6B;--brand2:#2B5BA8;
+  --gold:#C9924A;--gold-bg:#FDF6EC;--gold-border:#F0D9B5;
+  --green:#16A34A;--green-bg:#F0FDF4;--green-border:#BBF7D0;
+  --red:#DC2626;--red-bg:#FEF2F2;--red-border:#FECACA;
+  --blue:#2563EB;--blue-bg:#EFF6FF;--blue-border:#BFDBFE;
+  --amber:#D97706;--amber-bg:#FFFBEB;
+  --teal:#0F766E;--teal-bg:#F0FDFA;--purple:#7C3AED;
+  --sans:'Noto Sans SC','Inter',sans-serif;
+  --serif:'Noto Serif SC',serif;--mono:'Inter',monospace;
+}
+body{background:var(--bg);color:var(--text);font-family:var(--sans);font-size:14px;line-height:1.6;}
+a{text-decoration:none;color:inherit;}
+.layout{display:flex;min-height:100vh;}
+.sidebar{width:220px;background:var(--brand);position:fixed;top:0;left:0;height:100vh;display:flex;flex-direction:column;z-index:100;overflow-y:auto;}
+.main{margin-left:220px;flex:1;display:flex;flex-direction:column;}
+.topbar{background:var(--white);border-bottom:1px solid var(--border);padding:0 28px;height:60px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:50;}
+.content{padding:24px 28px 60px;}
+.sb-logo{padding:22px 18px 14px;border-bottom:1px solid rgba(255,255,255,.1);}
+.sb-brand{font-family:var(--serif);font-size:15px;font-weight:700;color:#fff;line-height:1.3;}
+.sb-sub{font-size:11px;color:rgba(255,255,255,.45);margin-top:2px;}
+.sb-section{padding:10px 16px 4px;font-size:10px;letter-spacing:.1em;color:rgba(255,255,255,.38);text-transform:uppercase;font-weight:600;}
+.sb-item{display:flex;align-items:center;gap:10px;padding:9px 18px;cursor:pointer;color:rgba(255,255,255,.62);font-size:13px;transition:all .15s;border-left:3px solid transparent;}
+.sb-item:hover{background:rgba(255,255,255,.07);color:#fff;}
+.sb-item.active{background:rgba(255,255,255,.1);color:#fff;border-left-color:#E8C97A;}
+.sb-item-num{font-size:10px;color:rgba(255,255,255,.32);font-family:var(--mono);min-width:16px;}
+.sb-footer{margin-top:auto;padding:14px 18px;border-top:1px solid rgba(255,255,255,.08);font-size:10px;color:rgba(255,255,255,.28);}
+.tb-left{display:flex;align-items:center;gap:14px;}
+.tb-pagetitle{font-size:15px;font-weight:600;color:var(--text);}
+.tb-date{font-size:12px;color:var(--muted);}
+.tb-right{display:flex;align-items:center;gap:8px;}
+.status-dot{width:7px;height:7px;border-radius:50%;background:#16A34A;display:inline-block;animation:pulse 2.5s infinite;}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
+.last-update{font-size:12px;color:var(--muted);white-space:nowrap;}
+.btn{padding:7px 14px;border-radius:6px;font-size:12px;font-family:var(--sans);cursor:pointer;transition:all .15s;font-weight:500;display:inline-flex;align-items:center;gap:5px;white-space:nowrap;}
+.btn-primary{background:var(--brand2);color:#fff;border:1px solid var(--brand2);}
+.btn-primary:hover{background:var(--brand);}
+.btn-outline{background:var(--white);color:var(--text2);border:1px solid var(--border2);}
+.btn-outline:hover{border-color:var(--brand2);color:var(--brand2);}
+.btn-upload{background:var(--gold-bg);color:var(--gold);border:1px solid var(--gold-border);}
+.btn-upload:hover{background:#fdecd3;}
+input[type=file]{display:none;}
+.time-filter-bar{background:var(--white);border:1px solid var(--border);border-radius:8px;padding:12px 18px;margin-bottom:22px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+.tf-label{font-size:12px;color:var(--muted);font-weight:500;white-space:nowrap;}
+.tf-btns{display:flex;background:var(--bg);border:1px solid var(--border);border-radius:6px;overflow:hidden;}
+.tf-btn{padding:5px 12px;background:transparent;border:none;border-right:1px solid var(--border);color:var(--muted);font-size:12px;font-family:var(--sans);cursor:pointer;transition:all .12s;white-space:nowrap;}
+.tf-btn:last-child{border-right:none;}
+.tf-btn:hover{color:var(--brand2);}
+.tf-btn.active{background:var(--brand2);color:#fff;}
+.tf-sep{width:1px;height:18px;background:var(--border);}
+.tf-custom{display:flex;align-items:center;gap:6px;}
+.tf-custom label{font-size:12px;color:var(--muted);}
+.tf-custom input[type=date]{background:var(--bg);border:1px solid var(--border);border-radius:5px;padding:4px 8px;font-size:12px;color:var(--text2);font-family:var(--sans);outline:none;}
+.tf-custom input[type=date]:focus{border-color:var(--brand2);}
+.tf-apply{padding:5px 10px;background:var(--brand2);color:#fff;border:none;border-radius:5px;font-size:12px;cursor:pointer;font-family:var(--sans);}
+.range-tag{margin-left:auto;background:var(--blue-bg);color:var(--blue);border:1px solid var(--blue-border);border-radius:4px;padding:3px 10px;font-size:11px;font-weight:600;white-space:nowrap;}
+.module{margin-bottom:32px;}
+.module-header{display:flex;align-items:center;gap:10px;margin-bottom:16px;padding-bottom:10px;border-bottom:2px solid var(--border);}
+.mod-num{background:var(--brand);color:#fff;font-size:11px;font-weight:700;padding:2px 7px;border-radius:4px;font-family:var(--mono);}
+.mod-title{font-family:var(--serif);font-size:17px;font-weight:700;color:var(--text);}
+.mod-en{font-size:11px;color:var(--muted);font-family:var(--mono);}
+.module-divider{height:1px;background:var(--border);margin:32px 0;}
+.kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(148px,1fr));gap:10px;margin-bottom:18px;}
+.kpi-card{background:var(--white);border:1px solid var(--border);border-radius:10px;padding:14px 16px;position:relative;overflow:hidden;}
+.kpi-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;}
+.kpi-card.c-gold::before{background:linear-gradient(90deg,#C9924A,#E8C97A);}
+.kpi-card.c-green::before{background:linear-gradient(90deg,#16A34A,#4ADE80);}
+.kpi-card.c-blue::before{background:linear-gradient(90deg,#2563EB,#60A5FA);}
+.kpi-card.c-red::before{background:linear-gradient(90deg,#DC2626,#F87171);}
+.kpi-card.c-teal::before{background:linear-gradient(90deg,#0F766E,#2DD4BF);}
+.kpi-card.c-purple::before{background:linear-gradient(90deg,#7C3AED,#A78BFA);}
+.kpi-label{font-size:11px;color:var(--muted);font-weight:500;margin-bottom:5px;}
+.kpi-val{font-size:22px;font-weight:700;color:var(--text);font-family:var(--mono);line-height:1.2;}
+.kpi-sub{font-size:11px;margin-top:3px;}
+.kpi-delta{display:inline-flex;align-items:center;gap:3px;font-size:11px;font-weight:600;margin-top:3px;padding:2px 6px;border-radius:3px;}
+.du{background:var(--green-bg);color:var(--green);}
+.dd{background:var(--red-bg);color:var(--red);}
+.df{background:var(--bg);color:var(--muted);}
+.table-card{background:var(--white);border:1px solid var(--border);border-radius:10px;overflow:hidden;margin-bottom:16px;}
+.table-card-header{padding:12px 18px;border-bottom:1px solid var(--border);font-size:13px;font-weight:600;color:var(--text);}
+.table-wrap{overflow-x:auto;}
+table{width:100%;border-collapse:collapse;}
+thead tr{background:#F8F9FC;}
+th{padding:9px 14px;text-align:left;font-size:11px;font-weight:600;color:var(--muted);letter-spacing:.03em;text-transform:uppercase;white-space:nowrap;border-bottom:1px solid var(--border);}
+tbody tr{border-bottom:1px solid var(--border);transition:background .1s;}
+tbody tr:last-child{border-bottom:none;}
+tbody tr:hover{background:#F8F9FC;}
+td{padding:10px 14px;font-size:13px;color:var(--text2);white-space:nowrap;}
+td.strong{color:var(--text);font-weight:600;}
+td.c-gold{color:var(--gold);font-weight:600;}
+td.c-green{color:var(--green);font-weight:600;}
+td.c-red{color:var(--red);}
+td.c-blue{color:var(--blue);}
+tfoot tr{background:#F8F9FC;border-top:2px solid var(--border);}
+tfoot td{font-weight:700;color:var(--text);font-size:13px;}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:16px;}
+@media(max-width:1000px){.grid2{grid-template-columns:1fr;}}
+.chart-card{background:var(--white);border:1px solid var(--border);border-radius:10px;padding:16px 18px;}
+.chart-title{font-size:13px;font-weight:600;color:var(--text);margin-bottom:12px;}
+.chart-wrap{position:relative;width:100%;height:220px;}
+.tag{display:inline-flex;align-items:center;padding:3px 9px;border-radius:20px;font-size:11px;font-weight:600;}
+.tag-pos{background:var(--green-bg);color:var(--green);border:1px solid var(--green-border);}
+.tag-neg{background:var(--red-bg);color:var(--red);border:1px solid var(--red-border);}
+.tag-neu{background:var(--bg);color:var(--muted);border:1px solid var(--border);}
+.tag-done{background:var(--teal-bg);color:var(--teal);border:1px solid #99F6E4;}
+.tag-prog{background:var(--blue-bg);color:var(--blue);border:1px solid var(--blue-border);}
+.tag-risk{background:var(--amber-bg);color:var(--amber);border:1px solid #FDE68A;}
+.tag-wait{background:var(--bg);color:var(--muted);border:1px solid var(--border);}
+.tag-gold{background:var(--gold-bg);color:var(--gold);border:1px solid var(--gold-border);}
+.sent-wrap{background:var(--white);border:1px solid var(--border);border-radius:10px;padding:16px 18px;}
+.news-list{display:flex;flex-direction:column;gap:7px;margin-top:12px;}
+.news-row{display:flex;align-items:flex-start;gap:9px;padding:9px 11px;background:#F8F9FC;border-radius:6px;border:1px solid var(--border);transition:background .1s;}
+.news-row:hover{background:#EFF6FF;}
+.news-rank{font-size:11px;font-weight:700;color:var(--muted);font-family:var(--mono);min-width:18px;}
+.news-title{font-size:12px;color:var(--text2);flex:1;line-height:1.5;}
+.news-title a{color:var(--text2);text-decoration:none;}
+.news-title a:hover{color:var(--brand2);text-decoration:underline;}
+.news-tag{flex-shrink:0;}
+.ai-platform-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(175px,1fr));gap:11px;margin-bottom:16px;}
+.ai-plat-card{background:var(--white);border:1px solid var(--border);border-radius:10px;padding:14px;}
+.ai-plat-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:11px;}
+.ai-plat-name{font-size:13px;font-weight:700;}
+.ai-plat-trend{font-size:12px;font-weight:600;}
+.ai-metrics-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:5px;}
+.ai-metric{text-align:center;padding:7px 3px;background:var(--bg);border-radius:6px;}
+.ai-m-val{font-size:17px;font-weight:700;font-family:var(--mono);color:var(--brand2);}
+.ai-m-label{font-size:10px;color:var(--muted);margin-top:1px;}
+.kw-cloud{display:flex;flex-wrap:wrap;gap:7px;padding:4px 0;}
+.kw-chip{padding:4px 11px;border-radius:20px;background:var(--bg);border:1px solid var(--border);font-size:12px;color:var(--text2);display:inline-flex;align-items:center;gap:4px;transition:all .15s;cursor:default;}
+.kw-chip:hover{background:var(--blue-bg);border-color:var(--blue-border);color:var(--blue);}
+.kw-count{font-size:10px;color:var(--muted);font-family:var(--mono);}
+.task-item{background:var(--white);border:1px solid var(--border);border-radius:10px;padding:14px 18px;margin-bottom:9px;}
+.task-row1{display:flex;align-items:center;gap:9px;margin-bottom:5px;flex-wrap:wrap;}
+.task-name{font-size:14px;font-weight:600;color:var(--text);flex:1;}
+.task-desc{font-size:12px;color:var(--muted);margin-bottom:9px;line-height:1.5;}
+.task-row2{display:flex;align-items:center;gap:10px;}
+.task-prog-wrap{flex:1;height:5px;background:var(--bg);border-radius:3px;overflow:hidden;border:1px solid var(--border);}
+.task-prog-fill{height:100%;border-radius:3px;}
+.task-pct{font-size:12px;font-weight:700;color:var(--text);font-family:var(--mono);min-width:34px;}
+.task-deadline{font-size:11px;color:var(--muted);}
+.empty-state{text-align:center;padding:36px 20px;color:var(--muted);font-size:13px;}
+.empty-icon{font-size:28px;margin-bottom:8px;opacity:.45;}
+.upload-banner{background:linear-gradient(135deg,#EFF6FF,#EEF2FF);border:1px solid var(--blue-border);border-radius:10px;padding:12px 18px;margin-bottom:20px;display:flex;align-items:center;gap:12px;}
+.upload-banner-text{font-size:13px;color:var(--text2);flex:1;line-height:1.5;}
+.upload-banner-text strong{color:var(--brand2);}
+::-webkit-scrollbar{width:5px;height:5px;}
+::-webkit-scrollbar-track{background:var(--bg);}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px;}
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.42);z-index:1000;align-items:center;justify-content:center;}
+.modal-overlay.open{display:flex;}
+.modal{background:var(--white);border-radius:12px;padding:26px;max-width:600px;width:92%;max-height:80vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.14);}
+.modal-title{font-size:15px;font-weight:700;color:var(--text);margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;}
+.modal-close{background:transparent;border:none;font-size:20px;cursor:pointer;color:var(--muted);line-height:1;}
+.modal-body{font-size:13px;color:var(--text2);line-height:1.8;}
+.modal-body h4{font-size:11px;font-weight:700;color:var(--brand2);margin:12px 0 4px;text-transform:uppercase;letter-spacing:.05em;}
+.field-list{display:grid;grid-template-columns:auto 1fr;gap:3px 10px;font-size:12px;}
+.field-key{color:var(--brand);font-weight:600;font-family:var(--mono);padding:1px 0;}
+.field-desc{color:var(--text2);padding:1px 0;}
+/* Funnel chart */
+.funnel-wrap{padding:8px 0;}
+.funnel-step{display:flex;flex-direction:column;align-items:center;margin-bottom:2px;}
+.funnel-bar-outer{display:flex;align-items:center;width:100%;gap:10px;}
+.funnel-shape{height:36px;border-radius:3px;transition:width .5s ease;display:flex;align-items:center;justify-content:center;}
+.funnel-label{font-size:12px;font-weight:600;color:var(--text2);white-space:nowrap;min-width:32px;}
+.funnel-val{font-size:13px;font-weight:700;color:var(--text);font-family:var(--mono);min-width:60px;text-align:right;}
+.funnel-pct{font-size:11px;color:var(--muted);min-width:44px;}
+.funnel-arrow{text-align:center;color:var(--muted);font-size:14px;line-height:1;margin:1px 0;}
+</style>
+</head>
+<body>
+<div class="layout">
+<aside class="sidebar">
+  <div class="sb-logo">
+    <div class="sb-brand">诺亚控股</div>
+    <div class="sb-sub">品牌部数据看板</div>
+  </div>
+  <div style="padding:10px 0;">
+    <div class="sb-section">数据模块</div>
+    <a class="sb-item active" href="#mod-adflow" onclick="setActive(this)"><span class="sb-item-num">01</span>投流获客</a>
+    <a class="sb-item" href="#mod-media" onclick="setActive(this)"><span class="sb-item-num">02</span>自媒体矩阵</a>
+    <a class="sb-item" href="#mod-events" onclick="setActive(this)"><span class="sb-item-num">03</span>客户活动</a>
+    <a class="sb-item" href="#mod-ai" onclick="setActive(this)"><span class="sb-item-num">04</span>AI推荐监测</a>
+    <a class="sb-item" href="#mod-sentiment" onclick="setActive(this)"><span class="sb-item-num">05</span>舆情监控</a>
+    <a class="sb-item" href="#mod-strategy" onclick="setActive(this)"><span class="sb-item-num">06</span>战略进度</a>
+    <div style="height:1px;background:rgba(255,255,255,.08);margin:8px 0;"></div>
+    <div class="sb-section">操作</div>
+    <div class="sb-item" onclick="document.getElementById('upload-file').click()">⬆ 上传数据</div>
+    <div class="sb-item" onclick="showFieldModal()">📋 字段说明</div>
+    <div class="sb-item" onclick="clearData()" style="color:rgba(255,120,120,.65)">🗑 清空数据</div>
+  </div>
+  <div class="sb-footer">NOAH HOLDINGS · BRAND DEPT<br>Brand Digital Index v1.0</div>
+</aside>
+<input type="file" id="upload-file" accept=".xlsx,.xls" onchange="handleUpload(event)">
+
+<div class="main">
+  <div class="topbar">
+    <div class="tb-left">
+      <span class="tb-pagetitle">品牌部综合数据看板</span>
+      <span class="tb-date" id="cur-date"></span>
+    </div>
+    <div class="tb-right">
+      <span class="status-dot"></span>
+      <span class="last-update" id="last-update">等待数据上传</span>
+      <button class="btn btn-outline" id="share-btn" onclick="doShare()" style="display:none">📤 发送看板</button>
+      <button class="btn btn-upload" onclick="document.getElementById('upload-file').click()">⬆ 上传 Excel</button>
+    </div>
+  </div>
+
+  <div class="content">
+    <div class="upload-banner">
+      <span style="font-size:22px;">📥</span>
+      <div class="upload-banner-text">
+        请下载 <strong>noah-brand-data-template.xlsx</strong>，填写后点击「上传 Excel」即可更新看板。
+        同一<strong>日期+渠道/活动名</strong>再次上传 = 覆盖；新增行 = 追加。
+      </div>
+      <button class="btn btn-outline" onclick="showFieldModal()" style="flex-shrink:0">字段说明</button>
+    </div>
+
+    <!-- TIME FILTER -->
+    <div class="time-filter-bar">
+      <span class="tf-label">时间范围</span>
+      <div class="tf-btns">
+        <button class="tf-btn" onclick="setRange('yesterday',this)">昨日</button>
+        <button class="tf-btn active" onclick="setRange('all',this)">全部</button>
+        <button class="tf-btn" onclick="setRange('week',this)">本周</button>
+        <button class="tf-btn" onclick="setRange('month',this)">本月</button>
+        <button class="tf-btn" onclick="setRange('quarter',this)">本季</button>
+        <button class="tf-btn" onclick="setRange('half',this)">近半年</button>
+        <button class="tf-btn" onclick="setRange('year',this)">年度</button>
+      </div>
+      <div class="tf-sep"></div>
+      <div class="tf-custom">
+        <label>自定义</label>
+        <input type="date" id="df">
+        <span style="color:var(--muted);font-size:11px;">→</span>
+        <input type="date" id="dt">
+        <button class="tf-apply" onclick="applyCustom()">应用</button>
+      </div>
+      <div class="range-tag" id="range-tag">全部数据</div>
+    </div>
+
+    <!-- 01 投流获客 -->
+    <div class="module" id="mod-adflow">
+      <div class="module-header">
+        <span class="mod-num">01</span><span class="mod-title">投流获客</span>
+        <span class="mod-en">Ad Flow & Lead Generation</span>
+      </div>
+      <div class="kpi-grid" id="adflow-kpi"></div>
+      <div class="table-card">
+        <div class="table-card-header">渠道明细</div>
+        <div class="table-wrap"><table>
+          <thead><tr><th>渠道</th><th>消耗(元)</th><th>展现量</th><th>留资量</th><th>留资成本(元)</th><th>日增</th><th>环比</th></tr></thead>
+          <tbody id="adflow-body"></tbody>
+          <tfoot><tr id="adflow-foot"></tr></tfoot>
+        </table></div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-title">各渠道消耗趋势（折线图）</div>
+        <div class="chart-wrap"><canvas id="ch-adflow" role="img" aria-label="投流消耗趋势折线图">消耗趋势</canvas></div>
+      </div>
+    </div>
+    <div class="module-divider"></div>
+
+    <!-- 02 自媒体矩阵 -->
+    <div class="module" id="mod-media">
+      <div class="module-header">
+        <span class="mod-num">02</span><span class="mod-title">自媒体矩阵</span>
+        <span class="mod-en">Social Media Matrix</span>
+      </div>
+      <div class="kpi-grid" id="media-kpi"></div>
+      <div class="table-card">
+        <div class="table-card-header">渠道明细</div>
+        <div class="table-wrap"><table>
+          <thead><tr><th>渠道</th><th>发文数</th><th>浏览量</th><th>互动率</th><th>复用量</th><th>粉丝总量</th><th>粉丝日增</th><th>获客</th><th>互动率环比</th></tr></thead>
+          <tbody id="media-body"></tbody>
+          <tfoot><tr id="media-foot"></tr></tfoot>
+        </table></div>
+      </div>
+      <div class="grid2">
+        <div class="chart-card"><div class="chart-title">各渠道浏览量趋势</div><div class="chart-wrap"><canvas id="ch-media-views" role="img" aria-label="浏览量趋势">浏览量</canvas></div></div>
+        <div class="chart-card"><div class="chart-title">各渠道粉丝日增趋势</div><div class="chart-wrap"><canvas id="ch-media-growth" role="img" aria-label="粉丝日增趋势">粉丝增长</canvas></div></div>
+      </div>
+    </div>
+    <div class="module-divider"></div>
+
+    <!-- 03 客户活动 -->
+    <div class="module" id="mod-events">
+      <div class="module-header">
+        <span class="mod-num">03</span><span class="mod-title">客户活动</span>
+        <span class="mod-en">Client Events</span>
+      </div>
+      <div class="kpi-grid" id="events-kpi"></div>
+      <div class="table-card">
+        <div class="table-card-header">活动明细</div>
+        <div class="table-wrap"><table>
+          <thead><tr><th>活动名</th><th>规模</th><th>报名</th><th>报名率</th><th>签到</th><th>到场率</th><th>落单</th><th>落单率</th><th>落单金额(万元)</th></tr></thead>
+          <tbody id="events-body"></tbody>
+          <tfoot><tr id="events-foot"></tr></tfoot>
+        </table></div>
+      </div>
+      <div class="grid2">
+        <div class="chart-card"><div class="chart-title">各活动落单金额(万元)</div><div class="chart-wrap"><canvas id="ch-events" role="img" aria-label="落单金额">落单</canvas></div></div>
+        <div class="chart-card"><div class="chart-title">报名→签到→落单 漏斗</div><div id="events-funnel" style="margin-top:8px;"></div></div>
+      </div>
+    </div>
+    <div class="module-divider"></div>
+
+    <!-- 04 AI -->
+    <div class="module" id="mod-ai">
+      <div class="module-header">
+        <span class="mod-num">04</span><span class="mod-title">AI推荐监测</span>
+        <span class="mod-en">AI Visibility Tracking</span>
+      </div>
+      <div class="ai-platform-grid" id="ai-cards"></div>
+      <div class="table-card">
+        <div class="table-card-header">平台明细</div>
+        <div class="table-wrap"><table>
+          <thead><tr><th>平台</th><th>提及率</th><th>前三率</th><th>平均排名</th><th>非负率</th><th>前三率环比</th><th>更新日期</th></tr></thead>
+          <tbody id="ai-body"></tbody>
+        </table></div>
+      </div>
+      <div class="grid2">
+        <div class="chart-card"><div class="chart-title">各平台前三率趋势</div><div class="chart-wrap"><canvas id="ch-ai-trend" role="img" aria-label="AI前三率趋势">AI趋势</canvas></div></div>
+        <div class="chart-card"><div class="chart-title">高频关键词</div><div class="kw-cloud" id="ai-keywords" style="margin-top:10px;"></div></div>
+      </div>
+    </div>
+    <div class="module-divider"></div>
+
+    <!-- 05 舆情 -->
+    <div class="module" id="mod-sentiment">
+      <div class="module-header">
+        <span class="mod-num">05</span><span class="mod-title">舆情监控</span>
+        <span class="mod-en">Sentiment Monitoring</span>
+      </div>
+      <div class="grid2">
+        <div class="sent-wrap">
+          <div class="chart-title">境内舆情分布</div>
+          <div class="chart-wrap" style="height:200px;"><canvas id="ch-sent-dom" role="img" aria-label="境内舆情饼图">境内舆情</canvas></div>
+          <div id="sent-dom-meta" style="margin-top:6px;"></div>
+        </div>
+        <div class="sent-wrap">
+          <div class="chart-title">境外舆情分布</div>
+          <div class="chart-wrap" style="height:200px;"><canvas id="ch-sent-ovs" role="img" aria-label="境外舆情饼图">境外舆情</canvas></div>
+          <div id="sent-ovs-meta" style="margin-top:6px;"></div>
+        </div>
+      </div>
+      <div class="grid2">
+        <div class="chart-card"><div class="chart-title">境内热点新闻 TOP 6</div><div class="news-list" id="news-dom"></div></div>
+        <div class="chart-card"><div class="chart-title">境外热点新闻 TOP 6</div><div class="news-list" id="news-ovs"></div></div>
+      </div>
+    </div>
+    <div class="module-divider"></div>
+
+    <!-- 06 战略 -->
+    <div class="module" id="mod-strategy">
+      <div class="module-header">
+        <span class="mod-num">06</span><span class="mod-title">战略进度</span>
+        <span class="mod-en">Strategy Progress · 不受时间筛选影响</span>
+      </div>
+      <div class="kpi-grid" id="strat-kpi"></div>
+      <div id="task-list"></div>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- SHARE MODAL -->
+<div class="modal-overlay" id="share-modal">
+  <div class="modal" style="max-width:480px;">
+    <div class="modal-title">📤 发送看板 <button class="modal-close" onclick="document.getElementById('share-modal').classList.remove('open')">×</button></div>
+    <div class="modal-body">
+      <p style="margin-bottom:12px;color:var(--text2);font-size:13px;">点击下方按钮，数据将被压缩编码到链接中（无需联网、无需服务器）。把看板 HTML 文件发给同事后，同事将链接粘贴到地址栏即可查看。</p>
+      <button id="gen-link-btn" class="btn btn-primary" onclick="generateShareLink()" style="width:100%;justify-content:center;padding:10px;">生成分享链接</button>
+      <div id="link-output"></div>
+      <div style="margin-top:16px;padding-top:12px;border-top:1px solid var(--border);font-size:12px;color:var(--muted);">
+        💡 <strong>备选方案：</strong>也可以直接把 <strong>noah-brand-dashboard.html</strong> 和 <strong>Excel 数据文件</strong> 一起发给同事，对方下载 HTML 后上传 Excel 即可查看。
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- FIELD MODAL -->
+<div class="modal-overlay" id="field-modal">
+  <div class="modal">
+    <div class="modal-title">Excel 模板字段说明 <button class="modal-close" onclick="closeModal()">×</button></div>
+    <div class="modal-body">
+      <p style="color:var(--muted);font-size:12px;margin-bottom:10px;">日期格式：<strong>YYYY-MM-DD</strong>（如 2026-05-04）&nbsp;|&nbsp; 百分比填小数：45% 填 <strong>0.45</strong></p>
+      <h4>Sheet 01 · 投流获客</h4>
+      <div class="field-list">
+        <span class="field-key">date</span><span class="field-desc">日期</span>
+        <span class="field-key">channel</span><span class="field-desc">渠道名称（唯一标识）</span>
+        <span class="field-key">spend</span><span class="field-desc">消耗（元，填纯数字）</span>
+        <span class="field-key">impressions</span><span class="field-desc">展现量（人次）</span>
+        <span class="field-key">leads</span><span class="field-desc">留资量</span>
+        <span class="field-key">daily_new</span><span class="field-desc">日增</span>
+        <span class="field-key">delta_pct</span><span class="field-desc">环比变化（小数或整数均可，0.08 或 8 均表示+8%）</span>
+      </div>
+      <h4>Sheet 02 · 自媒体矩阵</h4>
+      <div class="field-list">
+        <span class="field-key">date / channel</span><span class="field-desc">日期、渠道名</span>
+        <span class="field-key">posts / views / interactions</span><span class="field-desc">发文数、浏览量、互动数</span>
+        <span class="field-key">reposts / followers / follower_growth</span><span class="field-desc">复用、粉丝总量、粉丝日增</span>
+        <span class="field-key">leads_gen / delta_eng</span><span class="field-desc">获客数、互动率环比（小数/整数均可）</span>
+      </div>
+      <h4>Sheet 03 · 客户活动</h4>
+      <div class="field-list">
+        <span class="field-key">date / name</span><span class="field-desc">日期、活动名（唯一标识）</span>
+        <span class="field-key">scale / registrations / checkins / orders</span><span class="field-desc">规模、报名、签到、落单人数</span>
+        <span class="field-key">order_amount</span><span class="field-desc">落单金额（万元）</span>
+      </div>
+      <h4>Sheet 04 · AI推荐监测</h4>
+      <div class="field-list">
+        <span class="field-key">date / platform</span><span class="field-desc">日期、平台名</span>
+        <span class="field-key">mention_rate / top3_rate / avg_rank / neg_rate</span><span class="field-desc">提及率、前三率、均排名、负面率（小数）</span>
+        <span class="field-key">delta_top3 / keywords</span><span class="field-desc">前三率环比、高频词（词:次数,词:次数）</span>
+      </div>
+      <h4>Sheet 05 · 舆情监控</h4>
+      <div class="field-list">
+        <span class="field-key">date / scope</span><span class="field-desc">日期、domestic 或 overseas</span>
+        <span class="field-key">total / pos_pct / neu_pct / neg_pct</span><span class="field-desc">总数、正/中/负占比（三项之和=1）</span>
+        <span class="field-key">news_1_title … news_6_title</span><span class="field-desc">新闻标题（可填URL，格式：标题|http://...）</span>
+        <span class="field-key">news_1_sentiment … news_6_sentiment</span><span class="field-desc">pos / neu / neg</span>
+      </div>
+      <h4>Sheet 06 · 战略进度</h4>
+      <div class="field-list">
+        <span class="field-key">task</span><span class="field-desc">任务名称（唯一标识）</span>
+        <span class="field-key">description / deadline</span><span class="field-desc">描述、截止日期</span>
+        <span class="field-key">status</span><span class="field-desc">done / in_progress / at_risk / not_started</span>
+        <span class="field-key">progress</span><span class="field-desc">进度小数（0.75 = 75%）</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pako/2.1.0/pako.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script>
+// ══ STATE ══
+let DB={adflow:[],media:[],events:[],ai:[],sentiment:[],strategy:[]};
+let range='all', customFrom=null, customTo=null;
+const charts={};
+
+// ══ INIT ══
+document.addEventListener('DOMContentLoaded',()=>{
+  document.getElementById('cur-date').textContent=new Date().toLocaleDateString('zh-CN',{year:'numeric',month:'long',day:'numeric',weekday:'short'});
+  loadDB();
+  renderAll();
+});
+
+// ══ SIDEBAR ══
+function setActive(el){ document.querySelectorAll('.sb-item').forEach(i=>i.classList.remove('active')); el.classList.add('active'); }
+
+// ══ MODAL ══
+function showFieldModal(){ document.getElementById('field-modal').classList.add('open'); }
+function closeModal(){ document.getElementById('field-modal').classList.remove('open'); }
+document.addEventListener('click',e=>{ if(e.target.classList.contains('modal-overlay')) e.target.classList.remove('open'); });
+
+// ══ SHARE / EXPORT ══
+function doShare(){
+  if(!hasData()){ alert('请先上传数据'); return; }
+  document.getElementById('share-modal').classList.add('open');
+}
+function hasData(){ return Object.values(DB).some(a=>a&&a.length); }
+function showShareBtn(){ const b=document.getElementById('share-btn'); if(b) b.style.display=''; }
+
+function generateShareLink(){
+  const out=document.getElementById('link-output');
+  out.innerHTML='<div style="color:var(--muted);font-size:12px;padding:8px 0;">生成中…</div>';
+  try{
+    // Compress DB with pako (deflate) then base64url encode — no external API needed
+    const json=JSON.stringify(DB);
+    const compressed=pako.deflate(json);
+    const b64=btoa(String.fromCharCode(...compressed))
+      .replace(/\+/g,'-').replace(/\//g,'_').replace(/=/g,'');
+    const url=location.href.split('#')[0]+'#d='+encodeURIComponent(b64);
+    const urlLen=url.length;
+    out.innerHTML=`
+      <div style="background:var(--green-bg);border:1px solid var(--green-border);border-radius:6px;padding:12px 14px;margin-top:10px;">
+        <div style="font-size:12px;color:var(--green);font-weight:600;margin-bottom:6px;">✅ 链接已生成（${Math.round(urlLen/1024)}KB，无需联网）</div>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <input id="share-url-input" value="${url}" readonly
+            style="flex:1;background:var(--white);border:1px solid var(--border);border-radius:4px;padding:6px 10px;font-size:11px;font-family:var(--mono);color:var(--brand2);min-width:0;">
+          <button onclick="copyShareUrl()" class="btn btn-primary" style="white-space:nowrap;flex-shrink:0;">复制</button>
+        </div>
+        <div style="font-size:11px;color:var(--muted);margin-top:6px;">
+          数据已压缩内嵌在链接中，<strong>无需任何服务器或网络</strong>。<br>
+          对方用浏览器打开 HTML 文件后，把这条链接贴入地址栏即可看到数据。<br>
+          或直接发送 HTML 文件 + Excel 文件（推荐方式）。
+        </div>
+      </div>`;
+  }catch(e){
+    out.innerHTML=`<div style="background:var(--red-bg);border:1px solid var(--red-border);border-radius:6px;padding:10px 14px;margin-top:10px;font-size:12px;color:var(--red);">生成失败：${e.message}</div>`;
+  }
+}
+function copyShareUrl(){
+  const inp=document.getElementById('share-url-input');
+  if(!inp) return;
+  inp.select(); document.execCommand('copy');
+  alert('✅ 链接已复制！\n\n使用方式：\n1. 把看板 HTML 文件发给同事\n2. 同事打开 HTML 文件后，将此链接粘贴到浏览器地址栏\n3. 页面将自动加载你的数据');
+}
+
+// copyLink replaced by copyShareUrl
+
+// ══ STORAGE ══
+function saveDB(){
+  // No localStorage — data is always uploaded fresh from Excel
+  // Sharing is done via URL hash (see doShare/generateShortLink)
+}
+function loadDB(){
+  // Always wipe ALL legacy localStorage versions to prevent stale data contamination
+  ['noah_bdi','noah_bdi2','noah_bdi3','noah_bdi4','noah_brand_store','noah_bdi_v2'].forEach(k=>{
+    try{ localStorage.removeItem(k); }catch(e){}
+  });
+
+  // Priority 1: URL hash — data encoded directly in URL (no external service needed)
+  const hash=location.hash.slice(1);
+  if(hash && hash.startsWith('d=')){
+    try{
+      const decoded=decodeURIComponent(hash.slice(2));
+      DB=JSON.parse(pako.inflate(Uint8Array.from(atob(decoded),c=>c.charCodeAt(0)),{to:'string'}));
+      document.getElementById('last-update').textContent='来自共享链接';
+      showShareBtn();
+    }catch(e){ document.getElementById('last-update').textContent='链接数据解析失败'; }
+    return;
+  }
+  // Priority 2: preloaded data (embedded in exported HTML)
+  if(window.__PRELOAD_DB__){
+    DB=window.__PRELOAD_DB__;
+    document.getElementById('last-update').textContent='来自导出文件';
+    showShareBtn(); return;
+  }
+  // No localStorage — each session starts fresh, upload Excel to populate
+}
+function clearData(){
+  if(!confirm('确定清空所有看板数据？')) return;
+  DB={adflow:[],media:[],events:[],ai:[],sentiment:[],strategy:[]};
+  saveDB(); renderAll();
+  document.getElementById('last-update').textContent='数据已清空';
+  const b=document.getElementById('share-btn'); if(b) b.style.display='none';
+}
+
+// ══ DATE HELPERS ══
+function localStr(d){ return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+function isValidDate(s){
+  // Only accept YYYY-MM-DD strings (digits and dashes only, starts with 20)
+  return typeof s==='string' && /^20\d{2}-\d{2}-\d{2}$/.test(s.slice(0,10));
+}
+function latestDate(mod){
+  const arr=DB[mod]||[];
+  return arr.reduce((m,r)=>{
+    const d=String(r.date||'').slice(0,10);
+    return isValidDate(d) && d>m ? d : m;
+  },'');
+}
+function latestDateAll(){
+  return ['adflow','media','events','ai','sentiment'].reduce((m,mod)=>{ const d=latestDate(mod); return d>m?d:m; },'');
+}
+
+// ══ TIME RANGE ══
+const RLABELS={yesterday:'昨日',latest:'最新一天',all:'全部数据',week:'本周',month:'本月',quarter:'本季度',half:'近半年',year:'年度',custom:'自定义'};
+function setRange(r,btn){
+  range=r; customFrom=null; customTo=null;
+  document.querySelectorAll('.tf-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  let label=RLABELS[r]||r;
+  if(r==='latest'){ const d=latestDateAll(); if(d) label='最新：'+d; }
+  document.getElementById('range-tag').textContent=label;
+  renderAll();
+}
+function applyCustom(){
+  const f=document.getElementById('df').value, t=document.getElementById('dt').value;
+  if(f&&t){ range='custom'; customFrom=f; customTo=t;
+    document.getElementById('range-tag').textContent=f+' → '+t;
+    document.querySelectorAll('.tf-btn').forEach(b=>b.classList.remove('active'));
+    renderAll();
+  }
+}
+function filterDate(recs){
+  if(!recs||!recs.length) return [];
+  if(range==='all') return recs;
+  const now=new Date();
+  let from='', to=localStr(now);
+  if(range==='yesterday'){ const y=new Date(now); y.setDate(y.getDate()-1); from=to=localStr(y); }
+  else if(range==='latest'){ const d=latestDateAll(); from=to=d||to; }
+  else if(range==='week'){ const w=new Date(now); w.setDate(w.getDate()-w.getDay()+1); from=localStr(w); }
+  else if(range==='month'){ const m=new Date(now); m.setDate(1); from=localStr(m); }
+  else if(range==='quarter'){ const q=new Date(now); q.setMonth(Math.floor(q.getMonth()/3)*3,1); from=localStr(q); }
+  else if(range==='half'){ const h=new Date(now); h.setMonth(h.getMonth()-6); from=localStr(h); }
+  else if(range==='year'){ const y=new Date(now); y.setMonth(0,1); from=localStr(y); }
+  else if(range==='custom'){ from=customFrom; to=customTo; }
+  else return recs;
+  return recs.filter(r=>{ const d=String(r.date||'').slice(0,10); return isValidDate(d) && d>=from && d<=to; });
+}
+
+// ══ EXCEL UPLOAD ══
+function handleUpload(e){
+  const f=e.target.files[0]; if(!f) return;
+  const reader=new FileReader();
+  reader.onload=ev=>{
+    try{
+      const wb=XLSX.read(ev.target.result,{type:'binary'});
+      parseAndMerge(wb);
+      saveDB();
+      const t=new Date().toLocaleString('zh-CN',{month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'});
+      document.getElementById('last-update').textContent='更新于 '+t;
+      showShareBtn();
+      renderAll();
+      alert('✅ 数据上传成功！共加载 '+countRecords()+' 条记录。');
+    }catch(err){ alert('❌ 解析失败：'+err.message); console.error(err); }
+    e.target.value='';
+  };
+  reader.readAsBinaryString(f);
+}
+function countRecords(){ return Object.values(DB).reduce((s,a)=>s+(a?a.length:0),0); }
+
+const KEY_STARTS=['date','task','scope','channel','platform','name'];
+function sheetToRecords(ws){
+  const aoa=XLSX.utils.sheet_to_json(ws,{header:1,defval:null});
+  if(aoa.length<3) return [];
+  let hIdx=-1;
+  for(let i=0;i<Math.min(8,aoa.length);i++){
+    const row=aoa[i]; if(!row) continue;
+    const fw=row.map(v=>String(v||'').trim().split('\n')[0].trim().toLowerCase());
+    if(fw.some(w=>KEY_STARTS.includes(w))){ hIdx=i; break; }
+  }
+  if(hIdx<0) return [];
+  const headers=aoa[hIdx].map(v=>String(v||'').trim().split('\n')[0].trim());
+  const out=[];
+  for(let i=hIdx+1;i<aoa.length;i++){
+    const row=aoa[i];
+    if(!row||row.every(v=>v===null||v===undefined||String(v).trim()==='')) continue;
+    const rec={};
+    headers.forEach((h,ci)=>{
+      if(!h) return;
+      let v=row[ci];
+      const isDf=/^(date|deadline)$/i.test(h);
+      if(isDf){
+        // Without cellDates:true, XLSX.js returns:
+        //   data_type='d': raw string like "2026-05-06" -> slice(0,10) is always correct
+        //   data_type='n': raw Excel serial number -> convert via UTC to avoid timezone issues
+        // We never receive Date objects this way, so no browser timezone ambiguity.
+        if(typeof v==='number' && v>1){
+          // Excel serial -> UTC date string (getUTC* methods, not local time)
+          const d=new Date(Math.round((v-25569)*86400*1000));
+          v=d.getUTCFullYear()+'-'+String(d.getUTCMonth()+1).padStart(2,'0')+'-'+String(d.getUTCDate()).padStart(2,'0');
+        } else if(v!=null){
+          // String value: take first 10 chars (handles "2026-05-06", "2026-05-06T...")
+          v=String(v).slice(0,10);
+        }
+      }
+      rec[h]=v;
+    });
+    out.push(rec);
+  }
+  return out;
+}
+
+const SMAP={'01_投流获客':'adflow','投流获客':'adflow','02_自媒体矩阵':'media','自媒体矩阵':'media','03_客户活动':'events','客户活动':'events','04_AI推荐监测':'ai','AI推荐监测':'ai','05_舆情监控':'sentiment','舆情监控':'sentiment','06_战略进度':'strategy','战略进度':'strategy'};
+function getMod(n){ for(const k of Object.keys(SMAP)) if(n.includes(k)) return SMAP[k]; return null; }
+
+function parseAndMerge(wb){
+  const KF={adflow:'channel',media:'channel',events:'name',ai:'platform',sentiment:'scope',strategy:'task'};
+  // First pass: collect all records per module from this upload
+  const incoming={adflow:[],media:[],events:[],ai:[],sentiment:[],strategy:[]};
+  wb.SheetNames.forEach(name=>{
+    const mod=getMod(name); if(!mod) return;
+    const rows=sheetToRecords(wb.Sheets[name]);
+    rows.forEach(rec=>{
+      if(mod==='ai' && rec.keywords && typeof rec.keywords==='string'){
+        rec.keywords=rec.keywords.split(',').map(s=>{const p=s.trim().split(':');return{word:p[0]||s,count:+(p[1]||1)};});
+      }
+      if(mod==='sentiment'){
+        rec.news=[];
+        for(let i=1;i<=6;i++){
+          const raw=String(rec[`news_${i}_title`]||'').trim();
+          const s=String(rec[`news_${i}_sentiment`]||'neu').trim();
+          if(raw && raw.toUpperCase()!=='NULL'){
+            const pipe=raw.indexOf('|');
+            const title=pipe>0?raw.slice(0,pipe).trim():raw;
+            const url=pipe>0?raw.slice(pipe+1).trim():'';
+            rec.news.push({title,url,sentiment:s.toUpperCase()==='NULL'?'neu':s,heat:7-i});
+          }
+          delete rec[`news_${i}_title`]; delete rec[`news_${i}_sentiment`];
+        }
+      }
+      const kf=KF[mod]; const kv=rec[kf];
+      if(!kv && mod!=='strategy') return;
+      // Deduplicate within this upload only (same key+date = keep latest)
+      const idx=incoming[mod].findIndex(r=>String(r[kf])===String(kv)&&r.date===rec.date);
+      if(idx>=0) incoming[mod][idx]={...incoming[mod][idx],...rec};
+      else incoming[mod].push(rec);
+    });
+  });
+  // Second pass: REPLACE each module entirely — never mix with stale localStorage data
+  Object.keys(incoming).forEach(mod=>{
+    if(incoming[mod].length>0) DB[mod]=incoming[mod];
+  });
+}
+
+// ══ RENDER ALL ══
+function renderAll(){ renderAdflow(); renderMedia(); renderEvents(); renderAI(); renderSentiment(); renderStrategy(); }
+
+// ══ HELPERS ══
+function N(v){ if(v==null||v===''||v==='-') return null; const n=+v; return isNaN(n)?null:n; }
+// Strict comma-formatted integer, no "万" abbreviation
+function fmtInt(v){ const n=N(v); if(n===null) return '-'; return Math.round(n).toLocaleString('zh-CN'); }
+// For fields that should never be abbreviated (spend, impressions)
+function fmtStrict(v){ const n=N(v); if(n===null) return '-'; return Math.round(n).toLocaleString('zh-CN'); }
+// For fields where 万 is acceptable (order_amount already in 万)
+function fmtN(v){
+  const n=N(v); if(n===null) return '-';
+  if(Math.abs(n)>=100000000) return (n/100000000).toFixed(1)+'亿';
+  if(Math.abs(n)>=10000) return (n/10000).toFixed(1)+'万';
+  return Math.round(n).toLocaleString('zh-CN');
+}
+function pct(v){ const n=N(v); if(n===null) return '-'; return (n*100).toFixed(0)+'%'; }
+function normDelta(v){
+  const n=N(v); if(n===null) return null;
+  return (Math.abs(n)>0&&Math.abs(n)<2)?Math.round(n*100):Math.round(n);
+}
+function delta(v){
+  const n=normDelta(v); if(n===null) return '<span class="tag tag-neu">-</span>';
+  const cls=n>0?'du':n<0?'dd':'df'; const a=n>0?'↑':n<0?'↓':'→';
+  return `<span class="kpi-delta ${cls}">${a} ${Math.abs(n)}%</span>`;
+}
+function kpi(label,val,cls=''){
+  return `<div class="kpi-card ${cls}"><div class="kpi-label">${label}</div><div class="kpi-val">${val}</div></div>`;
+}
+function sumF(arr,f){ return arr.reduce((s,r)=>s+(N(r[f])||0),0); }
+function aggBy(recs,kf,fields){
+  const m={};
+  recs.forEach(r=>{
+    const k=String(r[kf]||''); if(!k) return;
+    if(!m[k]){ m[k]={[kf]:k}; fields.forEach(f=>m[k][f]=0); }
+    fields.forEach(f=>m[k][f]+=(N(r[f])||0));
+    ['delta_pct','delta_eng','interactions'].forEach(f=>{ if(r[f]!=null) m[k][f]=r[f]; });
+    m[k].date=r.date;
+  });
+  return Object.values(m);
+}
+function lastBy(recs,kf){
+  const m={};
+  [...recs].sort((a,b)=>String(a.date||'')>String(b.date||'')?1:-1).forEach(r=>{ if(r[kf]) m[String(r[kf])]={...r}; });
+  return Object.values(m);
+}
+function emptyRow(cols){ return `<tr><td colspan="${cols}"><div class="empty-state"><div class="empty-icon">📭</div>暂无数据，请上传 Excel 文件</div></td></tr>`; }
+
+// ══ CHARTS ══
+function dc(id){ if(charts[id]){ charts[id].destroy(); delete charts[id]; } }
+const BASE={responsive:true,maintainAspectRatio:false,plugins:{legend:{display:true,labels:{color:'#4A5068',font:{size:11},boxWidth:10,padding:12}}},scales:{x:{ticks:{color:'#8B92AD',font:{size:11}},grid:{color:'#F0F1F5'}},y:{ticks:{color:'#8B92AD',font:{size:11}},grid:{color:'#F0F1F5'}}}};
+const COLORS=['#2563EB','#16A34A','#C9924A','#7C3AED','#0F766E','#DC2626','#D97706'];
+
+function lineChart(id,labels,datasets){
+  dc(id); const c=document.getElementById(id); if(!c) return;
+  charts[id]=new Chart(c,{type:'line',data:{labels,datasets:datasets.map((ds,i)=>({
+    label:ds.label,data:ds.data,borderColor:ds.color||COLORS[i%COLORS.length],
+    backgroundColor:(ds.color||COLORS[i%COLORS.length])+'18',
+    tension:.35,fill:false,pointRadius:3,pointHoverRadius:5,borderWidth:2,spanGaps:true
+  }))},options:{...BASE,plugins:{legend:{display:datasets.length>1,labels:{color:'#4A5068',font:{size:11},boxWidth:10,padding:10}}}}});
+}
+function barChart(id,labels,datasets){
+  dc(id); const c=document.getElementById(id); if(!c) return;
+  charts[id]=new Chart(c,{type:'bar',data:{labels,datasets:datasets.map((ds,i)=>({
+    label:ds.label,data:ds.data,
+    backgroundColor:ds.color||COLORS[i%COLORS.length],
+    borderRadius:4,borderSkipped:false
+  }))},options:{...BASE,plugins:{legend:{display:false}}}});
+}
+function donutChart(id,labels,data,colors){
+  dc(id); const c=document.getElementById(id); if(!c) return;
+  charts[id]=new Chart(c,{type:'doughnut',data:{labels,datasets:[{data,backgroundColor:colors,borderWidth:2,borderColor:'#fff',hoverOffset:4}]},options:{
+    responsive:true,maintainAspectRatio:false,cutout:'68%',
+    plugins:{legend:{display:true,position:'bottom',labels:{color:'#4A5068',font:{size:11},boxWidth:10,padding:10}},tooltip:{callbacks:{label:ctx=>{const total=ctx.dataset.data.reduce((a,b)=>a+b,0);const pct2=(ctx.parsed/total*100).toFixed(0);return ` ${ctx.label}: ${pct2}%`;}}}}}
+  });
+}
+
+// ══ 01 ADFLOW ══
+function renderAdflow(){
+  // For line chart: use full data grouped by channel over time
+  const allFilt=filterDate(DB.adflow);
+  const data=aggBy(allFilt,'channel',['spend','impressions','leads','daily_new']);
+  const body=document.getElementById('adflow-body'), foot=document.getElementById('adflow-foot');
+  if(!data.length){ body.innerHTML=emptyRow(7); foot.innerHTML=''; document.getElementById('adflow-kpi').innerHTML=''; dc('ch-adflow'); return; }
+  const ts=sumF(data,'spend'),ti=sumF(data,'impressions'),tl=sumF(data,'leads'),td=sumF(data,'daily_new');
+  document.getElementById('adflow-kpi').innerHTML=
+    kpi('总消耗(元)','¥'+fmtStrict(ts),'c-gold')+kpi('总展现量',fmtStrict(ti),'c-blue')+
+    kpi('总留资量',fmtStrict(tl),'c-green')+kpi('平均留资成本(元)',tl?'¥'+fmtStrict(ts/tl):'-','c-teal')+
+    kpi('日增合计','+'+fmtStrict(td),'c-purple')+kpi('活跃渠道',data.length,'c-blue');
+  body.innerHTML=data.map(r=>{
+    const cpl=(N(r.leads)&&N(r.spend))?(N(r.spend)/N(r.leads)):null;
+    return `<tr><td class="strong">${r.channel}</td><td class="c-gold">¥${fmtStrict(r.spend)}</td><td>${fmtStrict(r.impressions)}</td><td class="c-green">${fmtStrict(r.leads)}</td><td>${cpl?'¥'+fmtStrict(cpl):'-'}</td><td>${fmtStrict(r.daily_new||0)}</td><td>${delta(r.delta_pct)}</td></tr>`;
+  }).join('');
+  const tcp=tl?(ts/tl):null;
+  foot.innerHTML=`<td>合计</td><td>¥${fmtStrict(ts)}</td><td>${fmtStrict(ti)}</td><td>${fmtStrict(tl)}</td><td>${tcp?'¥'+fmtStrict(tcp):'-'}</td><td>${fmtStrict(td)}</td><td>—</td>`;
+  // Line chart: each channel's spend over dates
+  const channels=[...new Set(DB.adflow.map(r=>r.channel))];
+  const dates=[...new Set(filterDate(DB.adflow).map(r=>r.date))].sort();
+  lineChart('ch-adflow',dates,channels.map((ch,i)=>({
+    label:ch,color:COLORS[i%COLORS.length],
+    data:dates.map(d=>{ const r=filterDate(DB.adflow).find(x=>x.channel===ch&&x.date===d); return r?N(r.spend):null; })
+  })));
+}
+
+// ══ 02 MEDIA ══
+function renderMedia(){
+  const allFilt=filterDate(DB.media);
+  const data=aggBy(allFilt,'channel',['posts','views','interactions','reposts','followers','follower_growth','leads_gen']);
+  const body=document.getElementById('media-body'), foot=document.getElementById('media-foot');
+  if(!data.length){ body.innerHTML=emptyRow(9); foot.innerHTML=''; document.getElementById('media-kpi').innerHTML=''; dc('ch-media-views'); dc('ch-media-growth'); return; }
+  const tv=sumF(data,'views'),tf=sumF(data,'followers'),tfg=sumF(data,'follower_growth'),tl=sumF(data,'leads_gen'),tp=sumF(data,'posts');
+  document.getElementById('media-kpi').innerHTML=
+    kpi('总发文数',fmtStrict(tp),'c-blue')+kpi('总浏览量',fmtStrict(tv),'c-gold')+
+    kpi('粉丝总量',fmtStrict(tf),'c-teal')+kpi('粉丝日增','+'+fmtStrict(tfg),'c-green')+
+    kpi('内容获客',fmtStrict(tl),'c-green')+kpi('活跃渠道',data.length,'c-purple');
+  body.innerHTML=data.map(r=>{
+    const eng=(N(r.views)&&N(r.interactions))?(N(r.interactions)/N(r.views)*100).toFixed(2)+'%':'-';
+    return `<tr><td class="strong">${r.channel}</td><td>${fmtStrict(r.posts||0)}</td><td class="c-gold">${fmtStrict(r.views||0)}</td><td>${eng}</td><td>${fmtStrict(r.reposts||0)}</td><td>${fmtStrict(r.followers||0)}</td><td class="c-green">+${fmtStrict(r.follower_growth||0)}</td><td class="c-green">${fmtStrict(r.leads_gen||0)}</td><td>${delta(r.delta_eng)}</td></tr>`;
+  }).join('');
+  foot.innerHTML=`<td>合计</td><td>${fmtStrict(tp)}</td><td>${fmtStrict(tv)}</td><td>—</td><td>—</td><td>${fmtStrict(tf)}</td><td>+${fmtStrict(tfg)}</td><td>${fmtStrict(tl)}</td><td>—</td>`;
+  // Line charts: views and follower_growth over dates by channel
+  const channels=[...new Set(DB.media.map(r=>r.channel))];
+  const dates=[...new Set(allFilt.map(r=>r.date))].sort();
+  lineChart('ch-media-views',dates,channels.map((ch,i)=>({
+    label:ch,color:COLORS[i%COLORS.length],
+    data:dates.map(d=>{ const r=allFilt.find(x=>x.channel===ch&&x.date===d); return r?N(r.views):null; })
+  })));
+  lineChart('ch-media-growth',dates,channels.map((ch,i)=>({
+    label:ch,color:COLORS[i%COLORS.length],
+    data:dates.map(d=>{ const r=allFilt.find(x=>x.channel===ch&&x.date===d); return r?N(r.follower_growth):null; })
+  })));
+}
+
+// ══ 03 EVENTS ══
+function renderEvents(){
+  const data=aggBy(filterDate(DB.events),'name',['scale','registrations','checkins','orders','order_amount']);
+  const body=document.getElementById('events-body'), foot=document.getElementById('events-foot');
+  if(!data.length){ body.innerHTML=emptyRow(9); foot.innerHTML=''; document.getElementById('events-kpi').innerHTML=''; document.getElementById('events-funnel').innerHTML=''; dc('ch-events'); return; }
+  const ts=sumF(data,'scale'),tr=sumF(data,'registrations'),tc=sumF(data,'checkins'),to=sumF(data,'orders'),ta=sumF(data,'order_amount');
+  document.getElementById('events-kpi').innerHTML=
+    kpi('活动场数',data.length,'c-blue')+kpi('总报名',fmtStrict(tr),'c-teal')+kpi('总签到',fmtStrict(tc),'c-blue')+
+    kpi('总落单',fmtStrict(to),'c-green')+kpi('落单金额(万)',fmtN(ta),'c-gold')+kpi('综合落单率',tc?(to/tc*100).toFixed(0)+'%':'-','c-green');
+  body.innerHTML=data.map(r=>{
+    const reg=N(r.scale)?((N(r.registrations)||0)/N(r.scale)*100).toFixed(0)+'%':'-';
+    const chk=N(r.registrations)?((N(r.checkins)||0)/N(r.registrations)*100).toFixed(0)+'%':'-';
+    const ord=N(r.checkins)?((N(r.orders)||0)/N(r.checkins)*100).toFixed(0)+'%':'-';
+    return `<tr><td class="strong">${r.name}</td><td>${fmtStrict(r.scale||0)}</td><td>${fmtStrict(r.registrations||0)}</td><td>${reg}</td><td>${fmtStrict(r.checkins||0)}</td><td>${chk}</td><td class="c-green">${fmtStrict(r.orders||0)}</td><td class="c-green">${ord}</td><td class="c-gold">${fmtN(r.order_amount||0)}</td></tr>`;
+  }).join('');
+  foot.innerHTML=`<td>合计</td><td>${fmtStrict(ts)}</td><td>${fmtStrict(tr)}</td><td>${ts?(tr/ts*100).toFixed(0)+'%':'—'}</td><td>${fmtStrict(tc)}</td><td>${tr?(tc/tr*100).toFixed(0)+'%':'—'}</td><td>${fmtStrict(to)}</td><td>${tc?(to/tc*100).toFixed(0)+'%':'—'}</td><td>${fmtN(ta)}</td>`;
+  barChart('ch-events',data.map(r=>r.name),[{label:'落单金额(万)',data:data.map(r=>N(r.order_amount)||0),color:'#C9924A'}]);
+  // Real SVG funnel (inverted trapezoid shape)
+  const fSteps=[{l:'报名',v:tr,c:'#2563EB'},{l:'签到',v:tc,c:'#0F766E'},{l:'落单',v:to,c:'#C9924A'}];
+  const fMax=tr||1;
+  const fW=340, fStepH=72, fGap=4, fPad=10;
+  const fTotalH=fSteps.length*(fStepH+fGap)+20;
+  const el=document.getElementById('events-funnel');
+  let svgParts=`<svg viewBox="0 0 ${fW} ${fTotalH}" width="100%" style="max-width:380px;display:block;margin:0 auto;">`;
+  fSteps.forEach((s,i)=>{
+    const ratio=s.v/fMax;
+    const nextRatio=i<fSteps.length-1?fSteps[i+1].v/fMax:ratio*0.5;
+    const y=i*(fStepH+fGap)+10;
+    const topW=Math.max(ratio*fW*0.88,40);
+    const botW=Math.max(nextRatio*fW*0.88,30);
+    const topLeft=(fW-topW)/2, topRight=topLeft+topW;
+    const botLeft=(fW-botW)/2, botRight=botLeft+botW;
+    const convPct=i===0?'':i===1&&tr?`→ 签到率 ${(tc/tr*100).toFixed(0)}%`:i===2&&tc?`→ 落单率 ${(to/tc*100).toFixed(0)}%`:'';
+    svgParts+=`
+      <path d="M${topLeft},${y} L${topRight},${y} L${botRight},${y+fStepH} L${botLeft},${y+fStepH} Z"
+        fill="${s.c}" opacity="0.82"/>
+      <text x="${fW/2}" y="${y+fStepH/2-6}" text-anchor="middle" fill="white"
+        font-size="14" font-weight="700" font-family="Inter,sans-serif">${s.l}</text>
+      <text x="${fW/2}" y="${y+fStepH/2+12}" text-anchor="middle" fill="white"
+        font-size="12" font-family="Inter,sans-serif" opacity="0.95">${fmtStrict(s.v)} 人</text>
+      ${convPct?`<text x="${topRight+6}" y="${y+16}" fill="${s.c}" font-size="11" font-family="Inter,sans-serif" opacity="0.9">${convPct}</text>`:''}
+    `;
+  });
+  svgParts+='</svg>';
+  el.innerHTML=svgParts;
+}
+
+// ══ 04 AI ══
+function renderAI(){
+  const filt=filterDate(DB.ai);
+  const data=lastBy(filt,'platform');
+  const body=document.getElementById('ai-body');
+  if(!data.length){ document.getElementById('ai-cards').innerHTML=`<div class="empty-state" style="grid-column:1/-1">📭 暂无数据</div>`; body.innerHTML=emptyRow(7); document.getElementById('ai-keywords').innerHTML=''; dc('ch-ai-trend'); return; }
+  const PC={'ChatGPT':'#10a37f','Claude':'#C97C4B','Perplexity':'#7C3AED','Kimi':'#2563EB','豆包':'#D97706','文心一言':'#DC2626'};
+  document.getElementById('ai-cards').innerHTML=data.map(r=>{
+    const ac=PC[r.platform]||'#1B3A6B';
+    const dn=normDelta(r.delta_top3);
+    const tStr=dn!=null?(dn>0?'↑ +'+dn+'%':'↓ '+Math.abs(dn)+'%'):'-';
+    const tC=dn>0?'var(--green)':dn<0?'var(--red)':'var(--muted)';
+    return `<div class="ai-plat-card" style="border-top:3px solid ${ac}"><div class="ai-plat-head"><span class="ai-plat-name" style="color:${ac}">${r.platform}</span><span class="ai-plat-trend" style="color:${tC}">${tStr}</span></div><div class="ai-metrics-row"><div class="ai-metric"><div class="ai-m-val">${pct(r.mention_rate)}</div><div class="ai-m-label">提及率</div></div><div class="ai-metric"><div class="ai-m-val" style="color:${ac}">${pct(r.top3_rate)}</div><div class="ai-m-label">前三率</div></div><div class="ai-metric"><div class="ai-m-val">${r.avg_rank||'-'}</div><div class="ai-m-label">平均排名</div></div></div></div>`;
+  }).join('');
+  body.innerHTML=data.map(r=>`<tr><td class="strong">${r.platform}</td><td>${pct(r.mention_rate)}</td><td class="c-green">${pct(r.top3_rate)}</td><td>${r.avg_rank||'-'}</td><td class="c-green">${N(r.neg_rate)!=null?pct(1-N(r.neg_rate)):'-'}</td><td>${delta(r.delta_top3)}</td><td style="color:var(--muted)">${r.date||'-'}</td></tr>`).join('');
+  const kwm={};
+  filt.forEach(r=>{ if(!Array.isArray(r.keywords)) return; r.keywords.forEach(k=>{ if(k.word) kwm[k.word]=(kwm[k.word]||0)+(+k.count||1); }); });
+  const kwArr=Object.entries(kwm).sort((a,b)=>b[1]-a[1]).slice(0,20);
+  document.getElementById('ai-keywords').innerHTML=kwArr.length?kwArr.map(([w,c])=>`<span class="kw-chip">${w}<span class="kw-count">${c}</span></span>`).join(''):'<span style="color:var(--muted);font-size:12px;">暂无关键词</span>';
+  const plats=[...new Set(filt.map(r=>r.platform))];
+  const dates=[...new Set(filt.map(r=>r.date).filter(Boolean))].sort().slice(-14);
+  lineChart('ch-ai-trend',dates,plats.map((p,i)=>({
+    label:p,color:PC[p]||COLORS[i%COLORS.length],
+    data:dates.map(d=>{ const rec=filt.find(r=>r.platform===p&&r.date===d); return rec?Math.round((N(rec.top3_rate)||0)*100):null; })
+  })));
+}
+
+// ══ 05 SENTIMENT ══
+function renderSentiment(){
+  const filt=filterDate(DB.sentiment);
+  sentBlock('ch-sent-dom','sent-dom-meta','news-dom',filt.filter(r=>String(r.scope||'').toLowerCase()==='domestic'));
+  sentBlock('ch-sent-ovs','sent-ovs-meta','news-ovs',filt.filter(r=>String(r.scope||'').toLowerCase()==='overseas'));
+}
+function sentBlock(chartId,metaId,newsId,recs){
+  const meta=document.getElementById(metaId), newsEl=document.getElementById(newsId);
+  if(!recs.length){
+    dc(chartId); meta.innerHTML='<div class="empty-state">暂无数据</div>'; newsEl.innerHTML='<div class="empty-state">暂无新闻数据</div>'; return;
+  }
+  const latest=recs[recs.length-1];
+  const pos=N(latest.pos_pct)||0, neu=N(latest.neu_pct)||0, neg=N(latest.neg_pct)||0;
+  donutChart(chartId,['正面','中性','负面'],
+    [Math.round(pos*100),Math.round(neu*100),Math.round(neg*100)],
+    ['#16A34A','#CBD5E1','#DC2626']
+  );
+  meta.innerHTML=`<div style="text-align:center;font-size:12px;color:var(--muted);">共 <strong style="color:var(--text)">${latest.total||'-'}</strong> 条报道 &nbsp;·&nbsp; ${latest.date||''}</div>`;
+  const allNews=[];
+  recs.forEach(r=>{ if(Array.isArray(r.news)) r.news.forEach(n=>allNews.push(n)); });
+  allNews.sort((a,b)=>(b.heat||0)-(a.heat||0));
+  newsEl.innerHTML=allNews.slice(0,6).map((n,i)=>{
+    const tc=n.sentiment==='pos'?'tag-pos':n.sentiment==='neg'?'tag-neg':'tag-neu';
+    const tl=n.sentiment==='pos'?'正面':n.sentiment==='neg'?'负面':'中性';
+    const titleHtml=n.url?`<a href="${n.url}" target="_blank" rel="noopener">${n.title}</a>`:n.title;
+    return `<div class="news-row"><span class="news-rank">${String(i+1).padStart(2,'0')}</span><span class="news-title">${titleHtml}</span><span class="news-tag"><span class="tag ${tc}">${tl}</span></span></div>`;
+  }).join('')||'<div class="empty-state">暂无新闻数据</div>';
+}
+
+// ══ 06 STRATEGY ══
+function renderStrategy(){
+  const data=DB.strategy;
+  const el=document.getElementById('task-list');
+  if(!data.length){ el.innerHTML=`<div class="empty-state"><div class="empty-icon">📭</div>暂无任务数据</div>`; document.getElementById('strat-kpi').innerHTML=''; return; }
+  const total=data.length,done=data.filter(t=>t.status==='done').length;
+  const inprog=data.filter(t=>t.status==='in_progress').length,atrisk=data.filter(t=>t.status==='at_risk').length;
+  document.getElementById('strat-kpi').innerHTML=
+    kpi('任务总数',total,'c-blue')+kpi('已完成',done,'c-green')+kpi('进行中',inprog,'c-gold')+
+    kpi('存在风险',atrisk,'c-red')+kpi('完成率',(done/total*100).toFixed(0)+'%','c-green')+
+    kpi('平均进度',(data.reduce((s,t)=>s+(N(t.progress)||0),0)/total*100).toFixed(0)+'%','c-teal');
+  const SM={done:{l:'已完成',c:'tag-done'},in_progress:{l:'进行中',c:'tag-prog'},at_risk:{l:'存在风险',c:'tag-risk'},not_started:{l:'未开始',c:'tag-wait'}};
+  const PC2={done:'#0F766E',in_progress:'#2563EB',at_risk:'#D97706',not_started:'#CBD5E1'};
+  el.innerHTML=data.map(t=>{
+    const sm=SM[t.status]||SM.not_started;
+    const prog=Math.min(100,Math.max(0,(N(t.progress)||0)*100));
+    return `<div class="task-item"><div class="task-row1"><span class="task-name">${t.task}</span><span class="tag ${sm.c}">${sm.l}</span></div><div class="task-desc">${t.description||''}</div><div class="task-row2"><div class="task-prog-wrap"><div class="task-prog-fill" style="width:${prog.toFixed(0)}%;background:${PC2[t.status]||'#CBD5E1'}"></div></div><span class="task-pct">${prog.toFixed(0)}%</span><span class="task-deadline">截止 ${t.deadline||'-'}</span></div></div>`;
+  }).join('');
+}
+</script>
+</body>
+</html>
