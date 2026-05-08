@@ -603,8 +603,10 @@ function loadDB(){
   const upd=document.getElementById('last-update');
   upd.textContent='加载数据中…';
   fetch(GH_RAW+'?t='+Date.now())  // cache-bust
-    .then(r=>{ if(!r.ok) throw new Error('HTTP '+r.status); return r.json(); })
-    .then(data=>{
+    .then(r=>{ if(!r.ok) throw new Error('HTTP '+r.status); return r.text(); })
+    .then(text=>{
+      let data;
+      try{ data=JSON.parse(text); }catch(e){ throw new Error('数据格式错误'); }
       if(data && typeof data==='object'){
         DB=data;
         const total=Object.values(DB).reduce((s,a)=>s+(Array.isArray(a)?a.length:0),0);
@@ -615,8 +617,8 @@ function loadDB(){
       }
       renderAll();
     })
-    .catch(()=>{
-      upd.textContent='无法加载云端数据，请上传 Excel';
+    .catch(e=>{
+      upd.textContent='无法加载云端数据（'+e.message+'），请上传 Excel';
       renderAll();
     });
 }
