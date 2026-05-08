@@ -649,32 +649,44 @@ function loadDB(){
       renderAll();
     });
 }
+var _delTaskIdx=-1;
 function deleteTask(idx){
-  openModal(`
-    <div style="font-size:15px;font-weight:700;color:var(--red);margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid var(--border);">🗑 删除任务</div>
-    <p style="font-size:13px;color:var(--text2);margin-bottom:4px;">即将删除任务：<strong style="color:var(--text)">${DB.strategy[${idx}]?.task||''}</strong></p>
-    <p style="font-size:12px;color:var(--muted);margin-bottom:14px;">此操作不可撤销。请输入管理员密码确认：</p>
-    <input id="del-task-pwd" type="password" placeholder="请输入密码"
-      style="width:100%;background:var(--bg);border:1px solid var(--border2);border-radius:6px;padding:9px 12px;font-size:13px;font-family:var(--mono);color:var(--text);outline:none;margin-bottom:6px;"
-      onkeydown="if(event.key==='Enter')confirmDeleteTask(${idx})"
-      onfocus="this.style.borderColor='var(--red)'" onblur="this.style.borderColor='var(--border2)'">
-    <div id="del-task-err" style="color:var(--red);font-size:12px;min-height:18px;margin-bottom:10px;"></div>
-    <div style="display:flex;gap:8px;">
-      <button onclick="confirmDeleteTask(${idx})" style="flex:1;padding:9px;background:var(--red);color:#fff;border:none;border-radius:6px;font-size:13px;cursor:pointer;font-family:var(--sans);">确认删除</button>
-      <button onclick="closeModal()" style="padding:9px 16px;background:transparent;border:1px solid var(--border2);border-radius:6px;font-size:13px;cursor:pointer;color:var(--text2);">取消</button>
-    </div>
-  `);
-  setTimeout(()=>{ const i=document.getElementById('del-task-pwd'); if(i) i.focus(); },100);
+  _delTaskIdx=idx;
+  var taskName=(DB.strategy[idx]&&DB.strategy[idx].task)||'';
+  var h='';
+  h+='<div style="font-size:15px;font-weight:700;color:#DC2626;margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid #E4E7EF;">🗑 删除任务</div>';
+  h+='<p style="font-size:13px;color:#4A5068;margin-bottom:4px;">即将删除：<strong style="color:#1A1D2E">'+taskName+'</strong></p>';
+  h+='<p style="font-size:12px;color:#8B92AD;margin-bottom:14px;">此操作不可撤销，请输入管理员密码确认。</p>';
+  h+='<input id="del-task-pwd" type="password" placeholder="请输入密码"';
+  h+=' style="width:100%;background:#F5F6FA;border:1px solid #D0D5E8;border-radius:6px;padding:9px 12px;font-size:13px;color:#1A1D2E;outline:none;box-sizing:border-box;margin-bottom:6px;">';
+  h+='<div id="del-task-err" style="color:#DC2626;font-size:12px;min-height:18px;margin-bottom:10px;"></div>';
+  h+='<div style="display:flex;gap:8px;">';
+  h+='<button id="del-confirm-btn" style="flex:1;padding:9px;background:#DC2626;color:#fff;border:none;border-radius:6px;font-size:13px;cursor:pointer;">确认删除</button>';
+  h+='<button id="del-cancel-btn" style="padding:9px 16px;background:transparent;border:1px solid #D0D5E8;border-radius:6px;font-size:13px;cursor:pointer;color:#4A5068;">取消</button>';
+  h+='</div>';
+  openModal(h);
+  // Attach event listeners after DOM is ready — no inline handlers needed
+  setTimeout(function(){
+    var pwd=document.getElementById('del-task-pwd');
+    var btn=document.getElementById('del-confirm-btn');
+    var cancel=document.getElementById('del-cancel-btn');
+    if(pwd) pwd.addEventListener('keydown',function(e){ if(e.key==='Enter') confirmDeleteTask(); });
+    if(btn) btn.addEventListener('click', confirmDeleteTask);
+    if(cancel) cancel.addEventListener('click', closeModal);
+    if(pwd) pwd.focus();
+  },80);
 }
-async function confirmDeleteTask(idx){
-  const pwd=document.getElementById('del-task-pwd');
+async function confirmDeleteTask(){
+  var idx=_delTaskIdx;
+  var pwd=document.getElementById('del-task-pwd');
   if(!pwd||pwd.value!=='Noah2025!'){
-    const err=document.getElementById('del-task-err');
+    var err=document.getElementById('del-task-err');
     if(err) err.textContent='密码错误';
     return;
   }
   closeModal();
-  DB.strategy.splice(idx,1);
+  if(idx>=0 && idx<DB.strategy.length) DB.strategy.splice(idx,1);
+  _delTaskIdx=-1;
   await saveDB();
   renderStrategy();
 }
@@ -725,20 +737,26 @@ function clearData(){
   const b=document.getElementById('share-btn'); if(b) b.style.display='none';
 }
 function openClearModal(){
-  openModal(`
-    <div style="font-size:15px;font-weight:700;color:var(--red);margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid var(--border);">🗑 清空所有数据</div>
-    <p style="font-size:13px;color:var(--text2);margin-bottom:14px;">此操作将清空看板所有模块的数据，且无法撤销。请输入管理员密码确认：</p>
-    <input id="clear-pwd-input" type="password" placeholder="请输入密码"
-      style="width:100%;background:var(--bg);border:1px solid var(--border2);border-radius:6px;padding:9px 12px;font-size:13px;font-family:var(--mono);color:var(--text);outline:none;margin-bottom:6px;"
-      onkeydown="if(event.key==='Enter')clearData()"
-      onfocus="this.style.borderColor='var(--red)'" onblur="this.style.borderColor='var(--border2)'">
-    <div id="clear-pwd-err" style="color:var(--red);font-size:12px;min-height:18px;margin-bottom:10px;"></div>
-    <div style="display:flex;gap:8px;">
-      <button onclick="clearData()" style="flex:1;padding:9px;background:var(--red);color:#fff;border:none;border-radius:6px;font-size:13px;cursor:pointer;font-family:var(--sans);">确认清空</button>
-      <button onclick="closeModal()" style="padding:9px 16px;background:transparent;border:1px solid var(--border2);border-radius:6px;font-size:13px;cursor:pointer;color:var(--text2);">取消</button>
-    </div>
-  `);
-  setTimeout(()=>{ const i=document.getElementById('clear-pwd-input'); if(i) i.focus(); },100);
+  var h='';
+  h+='<div style="font-size:15px;font-weight:700;color:#DC2626;margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid #E4E7EF;">🗑 清空所有数据</div>';
+  h+='<p style="font-size:13px;color:#4A5068;margin-bottom:14px;">此操作将清空看板所有模块的数据，且无法撤销。请输入管理员密码确认：</p>';
+  h+='<input id="clear-pwd-input" type="password" placeholder="请输入密码"';
+  h+=' style="width:100%;background:#F5F6FA;border:1px solid #D0D5E8;border-radius:6px;padding:9px 12px;font-size:13px;color:#1A1D2E;outline:none;box-sizing:border-box;margin-bottom:6px;">';
+  h+='<div id="clear-pwd-err" style="color:#DC2626;font-size:12px;min-height:18px;margin-bottom:10px;"></div>';
+  h+='<div style="display:flex;gap:8px;">';
+  h+='<button id="clear-confirm-btn" style="flex:1;padding:9px;background:#DC2626;color:#fff;border:none;border-radius:6px;font-size:13px;cursor:pointer;">确认清空</button>';
+  h+='<button id="clear-cancel-btn" style="padding:9px 16px;background:transparent;border:1px solid #D0D5E8;border-radius:6px;font-size:13px;cursor:pointer;color:#4A5068;">取消</button>';
+  h+='</div>';
+  openModal(h);
+  setTimeout(function(){
+    var inp=document.getElementById('clear-pwd-input');
+    var btn=document.getElementById('clear-confirm-btn');
+    var cancel=document.getElementById('clear-cancel-btn');
+    if(inp) inp.addEventListener('keydown',function(e){ if(e.key==='Enter') clearData(); });
+    if(btn) btn.addEventListener('click', clearData);
+    if(cancel) cancel.addEventListener('click', closeModal);
+    if(inp) inp.focus();
+  },80);
 }
 
 // ══ DATE HELPERS ══
