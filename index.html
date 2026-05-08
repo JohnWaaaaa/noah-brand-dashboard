@@ -196,6 +196,7 @@ tfoot td{font-weight:700;color:var(--text);font-size:13px;}
     <div style="height:1px;background:rgba(255,255,255,.08);margin:8px 0;"></div>
     <div class="sb-section">操作</div>
     <div class="sb-item" onclick="document.getElementById('upload-file').click()">⬆ 上传数据</div>
+    <div class="sb-item" onclick="setGHToken()">🔑 设置 Token</div>
     <div class="sb-item" onclick="showFieldModal()">📋 字段说明</div>
     <div class="sb-item" onclick="clearData()" style="color:rgba(255,120,120,.65)">🗑 清空数据</div>
   </div>
@@ -380,12 +381,21 @@ tfoot td{font-weight:700;color:var(--text);font-size:13px;}
   <div class="modal" style="max-width:480px;">
     <div class="modal-title">📤 发送看板 <button class="modal-close" onclick="document.getElementById('share-modal').classList.remove('open')">×</button></div>
     <div class="modal-body">
-      <p style="margin-bottom:12px;color:var(--text2);font-size:13px;">点击下方按钮，数据将被压缩编码到链接中（无需联网、无需服务器）。把看板 HTML 文件发给同事后，同事将链接粘贴到地址栏即可查看。</p>
-      <button id="gen-link-btn" class="btn btn-primary" onclick="generateShareLink()" style="width:100%;justify-content:center;padding:10px;">生成分享链接</button>
-      <div id="link-output"></div>
-      <div style="margin-top:16px;padding-top:12px;border-top:1px solid var(--border);font-size:12px;color:var(--muted);">
-        💡 <strong>备选方案：</strong>也可以直接把 <strong>noah-brand-dashboard.html</strong> 和 <strong>Excel 数据文件</strong> 一起发给同事，对方下载 HTML 后上传 Excel 即可查看。
+      <p style="margin-bottom:14px;color:var(--text2);font-size:13px;">看板已部署在 GitHub Pages，直接把下方链接发给同事即可。对方打开后自动看到最新数据，无需上传任何文件。</p>
+      <div style="background:var(--blue-bg);border:1px solid var(--blue-border);border-radius:8px;padding:14px 16px;margin-bottom:14px;">
+        <div style="font-size:11px;color:var(--muted);margin-bottom:6px;">看板访问链接</div>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <input id="share-url-input" value="https://JohnWaaaaa.github.io/noah-brand-dashboard/" readonly
+            style="flex:1;background:var(--white);border:1px solid var(--border);border-radius:4px;padding:7px 10px;font-size:13px;font-family:var(--mono);color:var(--brand2);">
+          <button onclick="copyShareUrl()" class="btn btn-primary" style="white-space:nowrap;flex-shrink:0;">复制链接</button>
+        </div>
       </div>
+      <div style="background:var(--gold-bg);border:1px solid var(--gold-border);border-radius:8px;padding:12px 16px;font-size:12px;color:var(--text2);line-height:1.7;">
+        <strong style="color:var(--gold);">⚙️ 首次使用需要设置 Token</strong><br>
+        上传 Excel 时系统会提示输入 GitHub Token，输入后保存在本机浏览器中，之后无需再次输入。<br>
+        <span style="color:var(--muted);">Token 仅存于本机，不会上传到任何服务器。</span>
+      </div>
+      <div id="link-output"></div>
     </div>
   </div>
 </div>
@@ -508,40 +518,89 @@ function copyShareUrl(){
   const inp=document.getElementById('share-url-input');
   if(!inp) return;
   inp.select(); document.execCommand('copy');
-  alert('✅ 链接已复制！\n\n使用方式：\n1. 把看板 HTML 文件发给同事\n2. 同事打开 HTML 文件后，将此链接粘贴到浏览器地址栏\n3. 页面将自动加载你的数据');
+  alert('✅ 链接已复制！直接发给同事，用浏览器打开即可查看最新看板。');
 }
 
 // copyLink replaced by copyShareUrl
 
 // ══ STORAGE ══
-function saveDB(){
-  // No localStorage — data is always uploaded fresh from Excel
-  // Sharing is done via URL hash (see doShare/generateShortLink)
+const GH_USER='JohnWaaaaa', GH_REPO='noah-brand-dashboard', GH_FILE='data/brand-data.json';
+const GH_RAW=`https://raw.githubusercontent.com/${GH_USER}/${GH_REPO}/main/${GH_FILE}`;
+const GH_API=`https://api.github.com/repos/${GH_USER}/${GH_REPO}/contents/${GH_FILE}`;
+
+function getToken(){ return localStorage.getItem('gh_token')||''; }
+function saveToken(t){ localStorage.setItem('gh_token', t.trim()); }
+
+async function saveDB(){
+  const token=getToken();
+  if(!token){
+    showTokenPrompt();
+    return false;
+  }
+  try{
+    const content=btoa(unescape(encodeURIComponent(JSON.stringify(DB))));
+    // Get current SHA (needed for update)
+    let sha='';
+    try{
+      const r=await fetch(GH_API,{headers:{'Authorization':'token '+token,'Accept':'application/vnd.github.v3+json'}});
+      if(r.ok){ const j=await r.json(); sha=j.sha||''; }
+    }catch(e){}
+    // PUT file
+    const body={message:'Update brand data '+new Date().toISOString().slice(0,10),content,branch:'main'};
+    if(sha) body.sha=sha;
+    const res=await fetch(GH_API,{
+      method:'PUT',
+      headers:{'Authorization':'token '+token,'Content-Type':'application/json','Accept':'application/vnd.github.v3+json'},
+      body:JSON.stringify(body)
+    });
+    if(!res.ok){
+      const err=await res.json();
+      throw new Error(err.message||'HTTP '+res.status);
+    }
+    return true;
+  }catch(e){
+    alert('❌ 数据同步到 GitHub 失败：'+e.message+'\n\n请检查 Token 是否正确，或网络是否可访问 GitHub。');
+    return false;
+  }
+}
+
+function showTokenPrompt(){
+  const t=prompt('请输入你的 GitHub Personal Access Token（仅存在本机浏览器中，不会上传）：');
+  if(t&&t.trim()){ saveToken(t); }
 }
 function loadDB(){
-  // Always wipe ALL legacy localStorage versions to prevent stale data contamination
+  // Clear all legacy localStorage data keys (keep gh_token)
   ['noah_bdi','noah_bdi2','noah_bdi3','noah_bdi4','noah_brand_store','noah_bdi_v2'].forEach(k=>{
     try{ localStorage.removeItem(k); }catch(e){}
   });
-
-  // Priority 1: URL hash — data encoded directly in URL (no external service needed)
-  const hash=location.hash.slice(1);
-  if(hash && hash.startsWith('d=')){
-    try{
-      const decoded=decodeURIComponent(hash.slice(2));
-      DB=JSON.parse(pako.inflate(Uint8Array.from(atob(decoded),c=>c.charCodeAt(0)),{to:'string'}));
-      document.getElementById('last-update').textContent='来自共享链接';
-      showShareBtn();
-    }catch(e){ document.getElementById('last-update').textContent='链接数据解析失败'; }
-    return;
-  }
-  // Priority 2: preloaded data (embedded in exported HTML)
-  if(window.__PRELOAD_DB__){
-    DB=window.__PRELOAD_DB__;
-    document.getElementById('last-update').textContent='来自导出文件';
-    showShareBtn(); return;
-  }
-  // No localStorage — each session starts fresh, upload Excel to populate
+  // Fetch latest data from GitHub (public raw URL, no token needed)
+  const upd=document.getElementById('last-update');
+  upd.textContent='加载数据中…';
+  fetch(GH_RAW+'?t='+Date.now())  // cache-bust
+    .then(r=>{ if(!r.ok) throw new Error('HTTP '+r.status); return r.json(); })
+    .then(data=>{
+      if(data && typeof data==='object'){
+        DB=data;
+        const total=Object.values(DB).reduce((s,a)=>s+(Array.isArray(a)?a.length:0),0);
+        upd.textContent='数据已加载（'+total+' 条记录）';
+        if(total>0) showShareBtn();
+      } else {
+        upd.textContent='暂无数据，请上传 Excel';
+      }
+      renderAll();
+    })
+    .catch(()=>{
+      upd.textContent='无法加载云端数据，请上传 Excel';
+      renderAll();
+    });
+}
+function setGHToken(){
+  const cur=getToken();
+  const t=prompt('输入 GitHub Personal Access Token（需要 repo 权限）：
+当前：'+(cur?cur.slice(0,8)+'…':'未设置'));
+  if(t===null) return;
+  if(t.trim()){ saveToken(t); alert('✅ Token 已保存到本机浏览器。'); }
+  else { localStorage.removeItem('gh_token'); alert('Token 已清除。'); }
 }
 function clearData(){
   if(!confirm('确定清空所有看板数据？')) return;
@@ -608,16 +667,19 @@ function filterDate(recs){
 function handleUpload(e){
   const f=e.target.files[0]; if(!f) return;
   const reader=new FileReader();
-  reader.onload=ev=>{
+  reader.onload=async ev=>{
     try{
       const wb=XLSX.read(ev.target.result,{type:'binary'});
       parseAndMerge(wb);
-      saveDB();
-      const t=new Date().toLocaleString('zh-CN',{month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'});
-      document.getElementById('last-update').textContent='更新于 '+t;
-      showShareBtn();
       renderAll();
-      alert('✅ 数据上传成功！共加载 '+countRecords()+' 条记录。');
+      const t=new Date().toLocaleString('zh-CN',{month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'});
+      document.getElementById('last-update').textContent='解析完成，同步中…';
+      showShareBtn();
+      const ok=await saveDB();
+      if(ok){
+        document.getElementById('last-update').textContent='已同步到 GitHub（'+t+'）';
+        alert('✅ 数据上传成功！共 '+countRecords()+' 条记录，已同步到 GitHub。\n\n其他人刷新看板即可看到最新数据。');
+      }
     }catch(err){ alert('❌ 解析失败：'+err.message); console.error(err); }
     e.target.value='';
   };
