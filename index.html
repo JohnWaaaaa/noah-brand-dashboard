@@ -158,7 +158,6 @@ tfoot td{font-weight:700;color:var(--text);font-size:13px;}
 ::-webkit-scrollbar-track{background:var(--bg);}
 ::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px;}
 .modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.42);z-index:1000;align-items:center;justify-content:center;}
-.modal-overlay.open{display:flex;}
 .modal{background:var(--white);border-radius:12px;padding:26px;max-width:600px;width:92%;max-height:80vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.14);}
 .modal-title{font-size:15px;font-weight:700;color:var(--text);margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;}
 .modal-close{background:transparent;border:none;font-size:20px;cursor:pointer;color:var(--muted);line-height:1;}
@@ -381,7 +380,7 @@ tfoot td{font-weight:700;color:var(--text);font-size:13px;}
   <div class="modal" style="max-width:460px;">
     <div class="modal-title">
       🔑 设置 GitHub Token
-      <button class="modal-close" onclick="document.getElementById('token-modal').classList.remove('open')">×</button>
+      <button class="modal-close" onclick="document.getElementById('token-modal').style.display='none'">×</button>
     </div>
     <div class="modal-body">
       <p style="font-size:13px;color:var(--text2);margin-bottom:14px;line-height:1.7;">
@@ -406,7 +405,7 @@ tfoot td{font-weight:700;color:var(--text);font-size:13px;}
 <!-- SHARE MODAL -->
 <div class="modal-overlay" id="share-modal">
   <div class="modal" style="max-width:480px;">
-    <div class="modal-title">📤 发送看板 <button class="modal-close" onclick="document.getElementById('share-modal').classList.remove('open')">×</button></div>
+    <div class="modal-title">📤 发送看板 <button class="modal-close" onclick="document.getElementById('share-modal').style.display='none'">×</button></div>
     <div class="modal-body">
       <p style="margin-bottom:14px;color:var(--text2);font-size:13px;">看板已部署在 GitHub Pages，直接把下方链接发给同事即可。对方打开后自动看到最新数据，无需上传任何文件。</p>
       <div style="background:var(--blue-bg);border:1px solid var(--blue-border);border-radius:8px;padding:14px 16px;margin-bottom:14px;">
@@ -500,14 +499,14 @@ document.addEventListener('DOMContentLoaded',()=>{
 function setActive(el){ document.querySelectorAll('.sb-item').forEach(i=>i.classList.remove('active')); el.classList.add('active'); }
 
 // ══ MODAL ══
-function showFieldModal(){ document.getElementById('field-modal').classList.add('open'); }
-function closeModal(){ document.getElementById('field-modal').classList.remove('open'); }
-document.addEventListener('click',e=>{ if(e.target.classList.contains('modal-overlay')) e.target.classList.remove('open'); });
+function showFieldModal(){ document.getElementById('field-modal').style.display='flex'; }
+function closeModal(){ document.getElementById('field-modal').style.display='none'; }
+document.addEventListener('click',e=>{ if(e.target.classList.contains('modal-overlay')) e.target.style.display='none'; });
 
 // ══ SHARE / EXPORT ══
 function doShare(){
   if(!hasData()){ alert('请先上传数据'); return; }
-  document.getElementById('share-modal').classList.add('open');
+  document.getElementById('share-modal').style.display='flex';
 }
 function hasData(){ return Object.values(DB).some(a=>a&&a.length); }
 function showShareBtn(){ const b=document.getElementById('share-btn'); if(b) b.style.display=''; }
@@ -627,14 +626,14 @@ function setGHToken(){
   if(curEl) curEl.textContent=cur?'当前 Token：'+cur.slice(0,8)+'…（已设置）':'当前：未设置';
   const inp=document.getElementById('token-input');
   if(inp) inp.value='';
-  document.getElementById('token-modal').classList.add('open');
+  document.getElementById('token-modal').style.display='flex';
 }
 function saveTokenFromModal(){
   const inp=document.getElementById('token-input');
   const val=(inp?inp.value:'').trim();
   if(!val){ alert('请输入 Token'); return; }
   saveToken(val);
-  document.getElementById('token-modal').classList.remove('open');
+  document.getElementById('token-modal').style.display='none';
   // Show success in topbar
   document.getElementById('last-update').textContent='Token 已保存，可以上传数据了';
   setTimeout(()=>{
@@ -648,7 +647,7 @@ function clearTokenFromModal(){
   if(inp) inp.value='';
   const curEl=document.getElementById('token-current');
   if(curEl) curEl.textContent='当前：未设置';
-  document.getElementById('token-modal').classList.remove('open');
+  document.getElementById('token-modal').style.display='none';
 }
 function clearData(){
   if(!confirm('确定清空所有看板数据？')) return;
