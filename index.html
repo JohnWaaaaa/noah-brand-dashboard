@@ -221,8 +221,8 @@ tfoot td{font-weight:700;color:var(--text);font-size:13px;}
     <div class="upload-banner">
       <span style="font-size:22px;">📥</span>
       <div class="upload-banner-text">
-        请下载 <strong>noah-brand-data-template.xlsx</strong>，填写后点击「上传 Excel」即可更新看板。
-        同一<strong>日期+渠道/活动名</strong>再次上传 = 覆盖；新增行 = 追加。
+        各模块负责人下载对应<strong>独立模板</strong>填写后，点击「上传 Excel」即可更新对应模块数据。
+        支持同时上传多个模块文件。同一<strong>日期+渠道/活动名</strong>再次上传 = 覆盖；新增行 = 追加。
       </div>
       <button class="btn btn-outline" onclick="showFieldModal()" style="flex-shrink:0">字段说明</button>
     </div>
@@ -719,15 +719,17 @@ function handleUpload(e){
   reader.onload=async ev=>{
     try{
       const wb=XLSX.read(ev.target.result,{type:'binary'});
-      parseAndMerge(wb);
+      const updated=parseAndMerge(wb);
       renderAll();
+      const modNames={'adflow':'投流获客','media':'自媒体矩阵','events':'客户活动','ai':'AI推荐监测','sentiment':'舆情监控','strategy':'战略进度'};
+      const updatedLabels=updated.map(m=>modNames[m]||m).join('、');
       const t=new Date().toLocaleString('zh-CN',{month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'});
       document.getElementById('last-update').textContent='解析完成，同步中…';
       showShareBtn();
       const ok=await saveDB();
       if(ok){
         document.getElementById('last-update').textContent='已同步到 GitHub（'+t+'）';
-        alert('✅ 数据上传成功！共 '+countRecords()+' 条记录，已同步到 GitHub。\n\n其他人刷新看板即可看到最新数据。');
+        alert('✅ 数据上传成功！\n\n已更新模块：'+updatedLabels+'\n共 '+countRecords()+' 条记录，已同步到 GitHub。\n\n其他人刷新看板即可看到最新数据。');
       }
     }catch(err){ alert('❌ 解析失败：'+err.message); console.error(err); }
     e.target.value='';
@@ -778,15 +780,22 @@ function sheetToRecords(ws){
   return out;
 }
 
-const SMAP={'01_投流获客':'adflow','投流获客':'adflow','02_自媒体矩阵':'media','自媒体矩阵':'media','03_客户活动':'events','客户活动':'events','04_AI推荐监测':'ai','AI推荐监测':'ai','05_舆情监控':'sentiment','舆情监控':'sentiment','06_战略进度':'strategy','战略进度':'strategy'};
+const SMAP={
+  '01_投流获客':'adflow','投流获客':'adflow',
+  '02_自媒体矩阵':'media','自媒体矩阵':'media',
+  '03_客户活动':'events','客户活动':'events',
+  '04_AI推荐监测':'ai','AI推荐监测':'ai',
+  '05_舆情监控':'sentiment','舆情监控':'sentiment',
+  '06_战略进度':'strategy','战略进度':'strategy'
+};
 function getMod(n){ for(const k of Object.keys(SMAP)) if(n.includes(k)) return SMAP[k]; return null; }
 
 function parseAndMerge(wb){
   const KF={adflow:'channel',media:'channel',events:'name',ai:'platform',sentiment:'scope',strategy:'task'};
-  // First pass: collect all records per module from this upload
-  const incoming={adflow:[],media:[],events:[],ai:[],sentiment:[],strategy:[]};
+  const incoming={};
   wb.SheetNames.forEach(name=>{
     const mod=getMod(name); if(!mod) return;
+    if(!incoming[mod]) incoming[mod]=[];
     const rows=sheetToRecords(wb.Sheets[name]);
     rows.forEach(rec=>{
       if(mod==='ai' && rec.keywords && typeof rec.keywords==='string'){
@@ -808,16 +817,19 @@ function parseAndMerge(wb){
       }
       const kf=KF[mod]; const kv=rec[kf];
       if(!kv && mod!=='strategy') return;
-      // Deduplicate within this upload only (same key+date = keep latest)
       const idx=incoming[mod].findIndex(r=>String(r[kf])===String(kv)&&r.date===rec.date);
       if(idx>=0) incoming[mod][idx]={...incoming[mod][idx],...rec};
       else incoming[mod].push(rec);
     });
   });
-  // Second pass: REPLACE each module entirely — never mix with stale localStorage data
+  // Only replace modules that appear in this upload — others keep existing data
+  // This allows each person to upload their own module independently
   Object.keys(incoming).forEach(mod=>{
     if(incoming[mod].length>0) DB[mod]=incoming[mod];
   });
+  // Show which modules were updated
+  const updated=Object.keys(incoming).filter(m=>incoming[m].length>0);
+  return updated;
 }
 
 // ══ RENDER ALL ══
