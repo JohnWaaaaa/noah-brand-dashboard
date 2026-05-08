@@ -388,80 +388,8 @@ tfoot td{font-weight:700;color:var(--text);font-size:13px;}
       <div id="task-list"></div>
     </div>
   </div>
-</div>
-</div>
 
 <!-- modals handled by JS openModal() -->
-
-    <div class="modal-body">
-      <p style="margin-bottom:14px;color:var(--text2);font-size:13px;">看板已部署在 GitHub Pages，直接把下方链接发给同事即可。对方打开后自动看到最新数据，无需上传任何文件。</p>
-      <div style="background:var(--blue-bg);border:1px solid var(--blue-border);border-radius:8px;padding:14px 16px;margin-bottom:14px;">
-        <div style="font-size:11px;color:var(--muted);margin-bottom:6px;">看板访问链接</div>
-        <div style="display:flex;align-items:center;gap:8px;">
-          <input id="share-url-input" value="https://JohnWaaaaa.github.io/noah-brand-dashboard/" readonly
-            style="flex:1;background:var(--white);border:1px solid var(--border);border-radius:4px;padding:7px 10px;font-size:13px;font-family:var(--mono);color:var(--brand2);">
-          <button onclick="copyShareUrl()" class="btn btn-primary" style="white-space:nowrap;flex-shrink:0;">复制链接</button>
-        </div>
-      </div>
-      <div style="background:var(--gold-bg);border:1px solid var(--gold-border);border-radius:8px;padding:12px 16px;font-size:12px;color:var(--text2);line-height:1.7;">
-        <strong style="color:var(--gold);">⚙️ 首次使用需要设置 Token</strong><br>
-        上传 Excel 时系统会提示输入 GitHub Token，输入后保存在本机浏览器中，之后无需再次输入。<br>
-        <span style="color:var(--muted);">Token 仅存于本机，不会上传到任何服务器。</span>
-      </div>
-      <div id="link-output"></div>
-    </div>
-  </div>
-</div>
-
-<!-- modals handled by JS openModal() -->
-
-<div id="field-modal-template" style="display:none"><div class="modal-title">Excel 模板字段说明 <button class="modal-close" onclick="closeModal()">×</button></div>
-    <div class="modal-body">
-      <p style="color:var(--muted);font-size:12px;margin-bottom:10px;">日期格式：<strong>YYYY-MM-DD</strong>（如 2026-05-04）&nbsp;|&nbsp; 百分比填小数：45% 填 <strong>0.45</strong></p>
-      <h4>Sheet 01 · 投流获客</h4>
-      <div class="field-list">
-        <span class="field-key">date</span><span class="field-desc">日期</span>
-        <span class="field-key">channel</span><span class="field-desc">渠道名称（唯一标识）</span>
-        <span class="field-key">spend</span><span class="field-desc">消耗（元，填纯数字）</span>
-        <span class="field-key">impressions</span><span class="field-desc">展现量（人次）</span>
-        <span class="field-key">leads</span><span class="field-desc">留资量</span>
-        <span class="field-key">daily_new</span><span class="field-desc">日增</span>
-        <span class="field-key">delta_pct</span><span class="field-desc">环比变化（小数或整数均可，0.08 或 8 均表示+8%）</span>
-      </div>
-      <h4>Sheet 02 · 自媒体矩阵</h4>
-      <div class="field-list">
-        <span class="field-key">date / channel</span><span class="field-desc">日期、渠道名</span>
-        <span class="field-key">posts / views / interactions</span><span class="field-desc">发文数、浏览量、互动数</span>
-        <span class="field-key">reposts / followers / follower_growth</span><span class="field-desc">复用、粉丝总量、粉丝日增</span>
-        <span class="field-key">leads_gen / delta_eng</span><span class="field-desc">获客数、互动率环比（小数/整数均可）</span>
-      </div>
-      <h4>Sheet 03 · 客户活动</h4>
-      <div class="field-list">
-        <span class="field-key">date / name</span><span class="field-desc">日期、活动名（唯一标识）</span>
-        <span class="field-key">scale / registrations / checkins / orders</span><span class="field-desc">规模、报名、签到、落单人数</span>
-        <span class="field-key">order_amount</span><span class="field-desc">落单金额（万元）</span>
-      </div>
-      <h4>Sheet 04 · AI推荐监测</h4>
-      <div class="field-list">
-        <span class="field-key">date / platform</span><span class="field-desc">日期、平台名</span>
-        <span class="field-key">mention_rate / top3_rate / avg_rank / neg_rate</span><span class="field-desc">提及率、前三率、均排名、负面率（小数）</span>
-        <span class="field-key">delta_top3 / keywords</span><span class="field-desc">前三率环比、高频词（词:次数,词:次数）</span>
-      </div>
-      <h4>Sheet 05 · 舆情监控</h4>
-      <div class="field-list">
-        <span class="field-key">date / scope</span><span class="field-desc">日期、domestic 或 overseas</span>
-        <span class="field-key">total / pos_pct / neu_pct / neg_pct</span><span class="field-desc">总数、正/中/负占比（三项之和=1）</span>
-        <span class="field-key">news_1_title … news_6_title</span><span class="field-desc">新闻标题（可填URL，格式：标题|http://...）</span>
-        <span class="field-key">news_1_sentiment … news_6_sentiment</span><span class="field-desc">pos / neu / neg</span>
-      </div>
-      <h4>Sheet 06 · 战略进度</h4>
-      <div class="field-list">
-        <span class="field-key">task</span><span class="field-desc">任务名称（唯一标识）</span>
-        <span class="field-key">description / deadline</span><span class="field-desc">描述、截止日期</span>
-        <span class="field-key">status</span><span class="field-desc">done / in_progress / at_risk / not_started</span>
-        <span class="field-key">progress</span><span class="field-desc">进度小数（0.75 = 75%）</span></div>
-  </div>
-</div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pako/2.1.0/pako.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
@@ -511,8 +439,13 @@ function closeModal(){
   const ov=document.getElementById('__modal_ov__');
   if(ov) document.body.removeChild(ov);
 }
+var FIELD_MODAL_HTML='<div style="font-size:15px;font-weight:700;color:#1A1D2E;margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid #E4E7EF;">📋 Excel 模板字段说明</div><p style="color:#8B92AD;font-size:12px;margin-bottom:12px;">日期格式：<strong>YYYY-MM-DD</strong>（如 2026-05-06）&nbsp;|&nbsp; 百分比填小数：45% 填 <strong>0.45</strong></p><div style="display:grid;grid-template-columns:auto 1fr;gap:3px 10px;font-size:12px;margin-bottom:14px;"><strong style="color:#2B5BA8;grid-column:1/-1;margin-top:8px;font-size:11px;text-transform:uppercase;letter-spacing:.05em;">Sheet 01 · 投流获客</strong><span style="color:#1B3A6B;font-weight:600;font-family:monospace;">date</span><span style="color:#4A5068;">日期 (YYYY-MM-DD)</span><span style="color:#1B3A6B;font-weight:600;font-family:monospace;">channel</span><span style="color:#4A5068;">渠道名称（唯一标识）</span><span style="color:#1B3A6B;font-weight:600;font-family:monospace;">spend</span><span style="color:#4A5068;">消耗（元）</span><span style="color:#1B3A6B;font-weight:600;font-family:monospace;">impressions</span><span style="color:#4A5068;">展现量（人次）</span><span style="color:#1B3A6B;font-weight:600;font-family:monospace;">leads</span><span style="color:#4A5068;">留资量（环比自动计算）</span><strong style="color:#2B5BA8;grid-column:1/-1;margin-top:8px;font-size:11px;text-transform:uppercase;letter-spacing:.05em;">Sheet 02 · 自媒体矩阵</strong><span style="color:#1B3A6B;font-weight:600;font-family:monospace;">date/channel</span><span style="color:#4A5068;">日期、渠道名</span><span style="color:#1B3A6B;font-weight:600;font-family:monospace;">posts/views/interactions</span><span style="color:#4A5068;">发文数、浏览量、互动量</span><span style="color:#1B3A6B;font-weight:600;font-family:monospace;">followers/follower_growth</span><span style="color:#4A5068;">粉丝总量、粉丝日增</span><strong style="color:#2B5BA8;grid-column:1/-1;margin-top:8px;font-size:11px;text-transform:uppercase;letter-spacing:.05em;">Sheet 03 · 客户活动</strong><span style="color:#1B3A6B;font-weight:600;font-family:monospace;">date/name</span><span style="color:#4A5068;">日期、活动名（唯一标识）</span><span style="color:#1B3A6B;font-weight:600;font-family:monospace;">scale/registrations/checkins/orders</span><span style="color:#4A5068;">规模、报名、签到、落单</span><span style="color:#1B3A6B;font-weight:600;font-family:monospace;">order_amount</span><span style="color:#4A5068;">落单金额（万元）</span><strong style="color:#2B5BA8;grid-column:1/-1;margin-top:8px;font-size:11px;text-transform:uppercase;letter-spacing:.05em;">Sheet 04 · AI推荐监测</strong><span style="color:#1B3A6B;font-weight:600;font-family:monospace;">date/platform</span><span style="color:#4A5068;">日期、平台名</span><span style="color:#1B3A6B;font-weight:600;font-family:monospace;">mention_rate/top3_rate/avg_rank/neg_rate</span><span style="color:#4A5068;">提及率、前三率、排名、负面率（小数）</span><span style="color:#1B3A6B;font-weight:600;font-family:monospace;">delta_top3/keywords</span><span style="color:#4A5068;">前三率环比、高频词（词:次数,词:次数）</span><strong style="color:#2B5BA8;grid-column:1/-1;margin-top:8px;font-size:11px;text-transform:uppercase;letter-spacing:.05em;">Sheet 05 · 舆情监控</strong><span style="color:#1B3A6B;font-weight:600;font-family:monospace;">date/scope</span><span style="color:#4A5068;">日期、domestic 或 overseas</span><span style="color:#1B3A6B;font-weight:600;font-family:monospace;">total/pos_pct/neu_pct/neg_pct</span><span style="color:#4A5068;">总数、正/中/负占比（三项之和=1）</span><span style="color:#1B3A6B;font-weight:600;font-family:monospace;">news_1_title…news_6_title</span><span style="color:#4A5068;">新闻标题，支持「标题|URL」格式</span><span style="color:#1B3A6B;font-weight:600;font-family:monospace;">news_x_sentiment</span><span style="color:#4A5068;">pos / neu / neg</span><strong style="color:#2B5BA8;grid-column:1/-1;margin-top:8px;font-size:11px;text-transform:uppercase;letter-spacing:.05em;">Sheet 06 · 战略进度</strong><span style="color:#1B3A6B;font-weight:600;font-family:monospace;">task</span><span style="color:#4A5068;">任务名称（唯一标识）</span><span style="color:#1B3A6B;font-weight:600;font-family:monospace;">description/deadline</span><span style="color:#4A5068;">描述、截止日期</span><span style="color:#1B3A6B;font-weight:600;font-family:monospace;">status</span><span style="color:#4A5068;">done / in_progress / at_risk / not_started</span><span style="color:#1B3A6B;font-weight:600;font-family:monospace;">progress</span><span style="color:#4A5068;">进度小数（0.75 = 75%）</span></div><div style="text-align:right;"><button id="fm-close-btn" style="padding:7px 18px;background:#2B5BA8;color:#fff;border:none;border-radius:6px;font-size:13px;cursor:pointer;">关闭</button></div>';
 function showFieldModal(){
-  openModal(document.getElementById('field-modal-template').innerHTML);
+  openModal(FIELD_MODAL_HTML);
+  setTimeout(function(){
+    var btn=document.getElementById("fm-close-btn");
+    if(btn) btn.addEventListener("click", closeModal);
+  },80);
 }
 document.addEventListener('keydown',function(e){ if(e.key==='Escape') closeModal(); });
 
