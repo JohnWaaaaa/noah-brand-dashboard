@@ -157,7 +157,7 @@ tfoot td{font-weight:700;color:var(--text);font-size:13px;}
 ::-webkit-scrollbar{width:5px;height:5px;}
 ::-webkit-scrollbar-track{background:var(--bg);}
 ::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px;}
-.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.42);z-index:1000;align-items:center;justify-content:center;}
+/* modal handled by JS createElement */
 .modal{background:var(--white);border-radius:12px;padding:26px;max-width:600px;width:92%;max-height:80vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.14);}
 .modal-title{font-size:15px;font-weight:700;color:var(--text);margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;}
 .modal-close{background:transparent;border:none;font-size:20px;cursor:pointer;color:var(--muted);line-height:1;}
@@ -242,21 +242,17 @@ tfoot td{font-weight:700;color:var(--text);font-size:13px;}
       <div class="tf-sep"></div>
       <div class="tf-custom" style="display:flex;align-items:center;gap:6px;">
         <label style="font-size:12px;color:var(--muted);white-space:nowrap;">自定义</label>
-        <div style="position:relative;display:flex;align-items:center;">
-          <input type="date" id="df" onchange="onFromDateChange(this)"
-            style="padding:5px 8px;font-size:12px;border:1px solid var(--border);border-radius:5px;
-                   background:var(--bg);color:var(--text2);font-family:var(--sans);outline:none;cursor:pointer;
-                   width:130px;"
-            onfocus="this.style.borderColor='var(--brand2)'" onblur="this.style.borderColor='var(--border)'">
-        </div>
-        <span style="color:var(--muted);font-size:12px;">→</span>
-        <div style="position:relative;display:flex;align-items:center;">
-          <input type="date" id="dt" onchange="applyCustom()"
-            style="padding:5px 8px;font-size:12px;border:1px solid var(--border);border-radius:5px;
-                   background:var(--bg);color:var(--text2);font-family:var(--sans);outline:none;cursor:pointer;
-                   width:130px;"
-            onfocus="this.style.borderColor='var(--brand2)'" onblur="this.style.borderColor='var(--border)'">
-        </div>
+        <input type="date" id="df" onchange="onFromDateChange(this)"
+          style="padding:5px 10px;font-size:12px;border:1px solid var(--border);border-radius:5px;
+                 background:var(--bg);color:var(--text2);font-family:var(--sans);outline:none;
+                 cursor:text;width:136px;letter-spacing:0.02em;"
+          onfocus="this.style.borderColor='var(--brand2)'" onblur="this.style.borderColor='var(--border)'">
+        <span style="color:var(--muted);font-size:12px;flex-shrink:0;">→</span>
+        <input type="date" id="dt" onchange="applyCustom()"
+          style="padding:5px 10px;font-size:12px;border:1px solid var(--border);border-radius:5px;
+                 background:var(--bg);color:var(--text2);font-family:var(--sans);outline:none;
+                 cursor:text;width:136px;letter-spacing:0.02em;"
+          onfocus="this.style.borderColor='var(--brand2)'" onblur="this.style.borderColor='var(--border)'">
         <button class="tf-apply" onclick="applyCustom()">应用</button>
       </div>
       <div class="range-tag" id="range-tag">全部数据</div>
@@ -397,9 +393,6 @@ tfoot td{font-weight:700;color:var(--text);font-size:13px;}
 
 <!-- modals handled by JS openModal() -->
 
-<div class="modal-overlay" id="share-modal">
-  <div class="modal" style="max-width:480px;">
-    <div class="modal-title">📤 发送看板 <button class="modal-close" onclick="document.getElementById('share-modal').style.display='none'">×</button></div>
     <div class="modal-body">
       <p style="margin-bottom:14px;color:var(--text2);font-size:13px;">看板已部署在 GitHub Pages，直接把下方链接发给同事即可。对方打开后自动看到最新数据，无需上传任何文件。</p>
       <div style="background:var(--blue-bg);border:1px solid var(--blue-border);border-radius:8px;padding:14px 16px;margin-bottom:14px;">
@@ -470,7 +463,6 @@ tfoot td{font-weight:700;color:var(--text);font-size:13px;}
   </div>
 </div>
 
-<div id="modal-overlay" onclick="if(event.target===this)closeModal()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:9999;align-items:center;justify-content:center;"></div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pako/2.1.0/pako.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -490,22 +482,39 @@ document.addEventListener('DOMContentLoaded',()=>{
 // ══ SIDEBAR ══
 function setActive(el){ document.querySelectorAll('.sb-item').forEach(i=>i.classList.remove('active')); el.classList.add('active'); }
 
-// ══ UNIFIED MODAL SYSTEM (all browsers) ══
+// ══ MODAL SYSTEM — createElement (works in Chrome/Edge/Firefox/Safari) ══
 function openModal(innerHtml){
-  const ov=document.getElementById('modal-overlay');
-  ov.innerHTML='<div style="background:#fff;border-radius:12px;padding:26px;max-width:600px;width:92%;max-height:82vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.18);">'+innerHtml+'</div>';
-  ov.style.display='flex';
-  // Focus first input after render
-  setTimeout(()=>{ const inp=ov.querySelector('input'); if(inp) inp.focus(); },60);
+  closeModal(); // remove any existing
+  const ov=document.createElement('div');
+  ov.id='__modal_ov__';
+  // All styles inline — no CSS class dependency whatsoever
+  ov.style.cssText=[
+    'position:fixed','top:0','left:0','right:0','bottom:0',
+    'background:rgba(0,0,0,0.46)','z-index:99999',
+    'display:flex','align-items:center','justify-content:center',
+    'padding:16px'
+  ].join(';');
+  const box=document.createElement('div');
+  box.style.cssText=[
+    'background:#ffffff','border-radius:12px','padding:26px',
+    'max-width:600px','width:100%','max-height:86vh',
+    'overflow-y:auto','box-shadow:0 24px 64px rgba(0,0,0,0.22)',
+    'position:relative','box-sizing:border-box'
+  ].join(';');
+  box.innerHTML=innerHtml;
+  ov.appendChild(box);
+  ov.addEventListener('click',function(e){ if(e.target===ov) closeModal(); });
+  document.body.appendChild(ov);
+  setTimeout(()=>{ const inp=ov.querySelector('input:not([type=hidden])'); if(inp) inp.focus(); },80);
 }
 function closeModal(){
-  const ov=document.getElementById('modal-overlay');
-  if(ov){ ov.style.display='none'; ov.innerHTML=''; }
+  const ov=document.getElementById('__modal_ov__');
+  if(ov) document.body.removeChild(ov);
 }
 function showFieldModal(){
   openModal(document.getElementById('field-modal-template').innerHTML);
 }
-document.addEventListener('keydown',e=>{ if(e.key==='Escape') closeModal(); });
+document.addEventListener('keydown',function(e){ if(e.key==='Escape') closeModal(); });
 
 // ══ SHARE / EXPORT ══
 function doShare(){
@@ -761,13 +770,15 @@ function setRange(r,btn){
   renderAll();
 }
 function onFromDateChange(el){
-  // Set min date for end picker, then auto-open it
   const dt=document.getElementById('dt');
-  if(dt){
-    dt.min=el.value;
-    // Auto-open end date picker after selecting start date
-    setTimeout(()=>{ try{ dt.showPicker(); }catch(e){ dt.focus(); } },100);
-  }
+  if(!dt) return;
+  dt.min=el.value;
+  // If end date is before start date, clear it
+  if(dt.value && dt.value < el.value) dt.value='';
+  // Auto-focus end date picker — showPicker() where supported, focus() fallback
+  setTimeout(function(){
+    try{ dt.showPicker(); } catch(e){ dt.focus(); dt.click(); }
+  },150);
 }
 function applyCustom(){
   const f=document.getElementById('df').value, t=document.getElementById('dt').value;
