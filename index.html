@@ -376,6 +376,33 @@ tfoot td{font-weight:700;color:var(--text);font-size:13px;}
 </div>
 </div>
 
+<!-- TOKEN MODAL -->
+<div class="modal-overlay" id="token-modal">
+  <div class="modal" style="max-width:460px;">
+    <div class="modal-title">
+      🔑 设置 GitHub Token
+      <button class="modal-close" onclick="document.getElementById('token-modal').classList.remove('open')">×</button>
+    </div>
+    <div class="modal-body">
+      <p style="font-size:13px;color:var(--text2);margin-bottom:14px;line-height:1.7;">
+        Token 仅保存在<strong>本机浏览器</strong>中，不会上传到任何服务器。<br>
+        需要 <strong>repo</strong> 权限。生成路径：GitHub → Settings → Developer settings → Personal access tokens → Tokens (classic)
+      </p>
+      <div style="margin-bottom:12px;">
+        <label style="font-size:12px;font-weight:600;color:var(--text);display:block;margin-bottom:6px;">Personal Access Token</label>
+        <input id="token-input" type="password" placeholder="ghp_xxxxxxxxxxxxxx"
+          style="width:100%;background:var(--bg);border:1px solid var(--border2);border-radius:6px;padding:9px 12px;font-size:13px;font-family:var(--mono);color:var(--text);outline:none;"
+          onfocus="this.style.borderColor='var(--brand2)'" onblur="this.style.borderColor='var(--border2)'">
+      </div>
+      <div id="token-current" style="font-size:12px;color:var(--muted);margin-bottom:14px;"></div>
+      <div style="display:flex;gap:8px;">
+        <button class="btn btn-primary" onclick="saveTokenFromModal()" style="flex:1;justify-content:center;">保存 Token</button>
+        <button class="btn btn-outline" onclick="clearTokenFromModal()" style="flex-shrink:0;">清除</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- SHARE MODAL -->
 <div class="modal-overlay" id="share-modal">
   <div class="modal" style="max-width:480px;">
@@ -565,8 +592,8 @@ async function saveDB(){
 }
 
 function showTokenPrompt(){
-  const t=prompt('请输入你的 GitHub Personal Access Token（仅存在本机浏览器中，不会上传）：');
-  if(t&&t.trim()){ saveToken(t); }
+  // Open token modal instead of browser prompt (prompt() blocked on GitHub Pages)
+  setGHToken();
 }
 function loadDB(){
   // Clear all legacy localStorage data keys (keep gh_token)
@@ -596,11 +623,32 @@ function loadDB(){
 }
 function setGHToken(){
   const cur=getToken();
-  const t=prompt('输入 GitHub Personal Access Token（需要 repo 权限）：
-当前：'+(cur?cur.slice(0,8)+'…':'未设置'));
-  if(t===null) return;
-  if(t.trim()){ saveToken(t); alert('✅ Token 已保存到本机浏览器。'); }
-  else { localStorage.removeItem('gh_token'); alert('Token 已清除。'); }
+  const curEl=document.getElementById('token-current');
+  if(curEl) curEl.textContent=cur?'当前 Token：'+cur.slice(0,8)+'…（已设置）':'当前：未设置';
+  const inp=document.getElementById('token-input');
+  if(inp) inp.value='';
+  document.getElementById('token-modal').classList.add('open');
+}
+function saveTokenFromModal(){
+  const inp=document.getElementById('token-input');
+  const val=(inp?inp.value:'').trim();
+  if(!val){ alert('请输入 Token'); return; }
+  saveToken(val);
+  document.getElementById('token-modal').classList.remove('open');
+  // Show success in topbar
+  document.getElementById('last-update').textContent='Token 已保存，可以上传数据了';
+  setTimeout(()=>{
+    const upd=document.getElementById('last-update');
+    if(upd.textContent==='Token 已保存，可以上传数据了') upd.textContent='就绪';
+  },3000);
+}
+function clearTokenFromModal(){
+  localStorage.removeItem('gh_token');
+  const inp=document.getElementById('token-input');
+  if(inp) inp.value='';
+  const curEl=document.getElementById('token-current');
+  if(curEl) curEl.textContent='当前：未设置';
+  document.getElementById('token-modal').classList.remove('open');
 }
 function clearData(){
   if(!confirm('确定清空所有看板数据？')) return;
