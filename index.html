@@ -240,11 +240,23 @@ tfoot td{font-weight:700;color:var(--text);font-size:13px;}
         <button class="tf-btn" onclick="setRange('year',this)">年度</button>
       </div>
       <div class="tf-sep"></div>
-      <div class="tf-custom">
-        <label>自定义</label>
-        <input type="date" id="df">
-        <span style="color:var(--muted);font-size:11px;">→</span>
-        <input type="date" id="dt">
+      <div class="tf-custom" style="display:flex;align-items:center;gap:6px;">
+        <label style="font-size:12px;color:var(--muted);white-space:nowrap;">自定义</label>
+        <div style="position:relative;display:flex;align-items:center;">
+          <input type="date" id="df" onchange="onFromDateChange(this)"
+            style="padding:5px 8px;font-size:12px;border:1px solid var(--border);border-radius:5px;
+                   background:var(--bg);color:var(--text2);font-family:var(--sans);outline:none;cursor:pointer;
+                   width:130px;"
+            onfocus="this.style.borderColor='var(--brand2)'" onblur="this.style.borderColor='var(--border)'">
+        </div>
+        <span style="color:var(--muted);font-size:12px;">→</span>
+        <div style="position:relative;display:flex;align-items:center;">
+          <input type="date" id="dt" onchange="applyCustom()"
+            style="padding:5px 8px;font-size:12px;border:1px solid var(--border);border-radius:5px;
+                   background:var(--bg);color:var(--text2);font-family:var(--sans);outline:none;cursor:pointer;
+                   width:130px;"
+            onfocus="this.style.borderColor='var(--brand2)'" onblur="this.style.borderColor='var(--border)'">
+        </div>
         <button class="tf-apply" onclick="applyCustom()">应用</button>
       </div>
       <div class="range-tag" id="range-tag">全部数据</div>
@@ -383,34 +395,8 @@ tfoot td{font-weight:700;color:var(--text);font-size:13px;}
 </div>
 </div>
 
-<!-- TOKEN MODAL -->
-<div class="modal-overlay" id="token-modal">
-  <div class="modal" style="max-width:460px;">
-    <div class="modal-title">
-      🔑 设置 GitHub Token
-      <button class="modal-close" onclick="document.getElementById('token-modal').style.display='none'">×</button>
-    </div>
-    <div class="modal-body">
-      <p style="font-size:13px;color:var(--text2);margin-bottom:14px;line-height:1.7;">
-        Token 仅保存在<strong>本机浏览器</strong>中，不会上传到任何服务器。<br>
-        需要 <strong>repo</strong> 权限。生成路径：GitHub → Settings → Developer settings → Personal access tokens → Tokens (classic)
-      </p>
-      <div style="margin-bottom:12px;">
-        <label style="font-size:12px;font-weight:600;color:var(--text);display:block;margin-bottom:6px;">Personal Access Token</label>
-        <input id="token-input" type="password" placeholder="ghp_xxxxxxxxxxxxxx"
-          style="width:100%;background:var(--bg);border:1px solid var(--border2);border-radius:6px;padding:9px 12px;font-size:13px;font-family:var(--mono);color:var(--text);outline:none;"
-          onfocus="this.style.borderColor='var(--brand2)'" onblur="this.style.borderColor='var(--border2)'">
-      </div>
-      <div id="token-current" style="font-size:12px;color:var(--muted);margin-bottom:14px;"></div>
-      <div style="display:flex;gap:8px;">
-        <button class="btn btn-primary" onclick="saveTokenFromModal()" style="flex:1;justify-content:center;">保存 Token</button>
-        <button class="btn btn-outline" onclick="clearTokenFromModal()" style="flex-shrink:0;">清除</button>
-      </div>
-    </div>
-  </div>
-</div>
+<!-- modals handled by JS openModal() -->
 
-<!-- SHARE MODAL -->
 <div class="modal-overlay" id="share-modal">
   <div class="modal" style="max-width:480px;">
     <div class="modal-title">📤 发送看板 <button class="modal-close" onclick="document.getElementById('share-modal').style.display='none'">×</button></div>
@@ -434,10 +420,9 @@ tfoot td{font-weight:700;color:var(--text);font-size:13px;}
   </div>
 </div>
 
-<!-- FIELD MODAL -->
-<div class="modal-overlay" id="field-modal">
-  <div class="modal">
-    <div class="modal-title">Excel 模板字段说明 <button class="modal-close" onclick="closeModal()">×</button></div>
+<!-- modals handled by JS openModal() -->
+
+<div id="field-modal-template" style="display:none"><div class="modal-title">Excel 模板字段说明 <button class="modal-close" onclick="closeModal()">×</button></div>
     <div class="modal-body">
       <p style="color:var(--muted);font-size:12px;margin-bottom:10px;">日期格式：<strong>YYYY-MM-DD</strong>（如 2026-05-04）&nbsp;|&nbsp; 百分比填小数：45% 填 <strong>0.45</strong></p>
       <h4>Sheet 01 · 投流获客</h4>
@@ -481,12 +466,11 @@ tfoot td{font-weight:700;color:var(--text);font-size:13px;}
         <span class="field-key">task</span><span class="field-desc">任务名称（唯一标识）</span>
         <span class="field-key">description / deadline</span><span class="field-desc">描述、截止日期</span>
         <span class="field-key">status</span><span class="field-desc">done / in_progress / at_risk / not_started</span>
-        <span class="field-key">progress</span><span class="field-desc">进度小数（0.75 = 75%）</span>
-      </div>
-    </div>
+        <span class="field-key">progress</span><span class="field-desc">进度小数（0.75 = 75%）</span></div>
   </div>
 </div>
 
+<div id="modal-overlay" onclick="if(event.target===this)closeModal()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:9999;align-items:center;justify-content:center;"></div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pako/2.1.0/pako.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -506,15 +490,44 @@ document.addEventListener('DOMContentLoaded',()=>{
 // ══ SIDEBAR ══
 function setActive(el){ document.querySelectorAll('.sb-item').forEach(i=>i.classList.remove('active')); el.classList.add('active'); }
 
-// ══ MODAL ══
-function showFieldModal(){ document.getElementById('field-modal').style.display='flex'; }
-function closeModal(){ document.getElementById('field-modal').style.display='none'; }
-document.addEventListener('click',e=>{ if(e.target.classList.contains('modal-overlay')) e.target.style.display='none'; });
+// ══ UNIFIED MODAL SYSTEM (all browsers) ══
+function openModal(innerHtml){
+  const ov=document.getElementById('modal-overlay');
+  ov.innerHTML='<div style="background:#fff;border-radius:12px;padding:26px;max-width:600px;width:92%;max-height:82vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.18);">'+innerHtml+'</div>';
+  ov.style.display='flex';
+  // Focus first input after render
+  setTimeout(()=>{ const inp=ov.querySelector('input'); if(inp) inp.focus(); },60);
+}
+function closeModal(){
+  const ov=document.getElementById('modal-overlay');
+  if(ov){ ov.style.display='none'; ov.innerHTML=''; }
+}
+function showFieldModal(){
+  openModal(document.getElementById('field-modal-template').innerHTML);
+}
+document.addEventListener('keydown',e=>{ if(e.key==='Escape') closeModal(); });
 
 // ══ SHARE / EXPORT ══
 function doShare(){
   if(!hasData()){ alert('请先上传数据'); return; }
-  document.getElementById('share-modal').style.display='flex';
+  openModal(`
+    <div style="font-size:15px;font-weight:700;color:var(--text,#1A1D2E);margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid #E4E7EF;">📤 发送看板</div>
+    <p style="font-size:13px;color:#4A5068;margin-bottom:14px;">看板已部署在 GitHub Pages，直接把下方链接发给同事即可。</p>
+    <div style="background:#EFF6FF;border:1px solid #BFDBFE;border-radius:8px;padding:14px;margin-bottom:12px;">
+      <div style="font-size:11px;color:#8B92AD;margin-bottom:6px;">看板访问链接</div>
+      <div style="display:flex;align-items:center;gap:8px;">
+        <input id="share-url-input" value="https://JohnWaaaaa.github.io/noah-brand-dashboard/" readonly
+          style="flex:1;background:#fff;border:1px solid #E4E7EF;border-radius:4px;padding:7px 10px;font-size:12px;font-family:monospace;color:#2B5BA8;min-width:0;">
+        <button onclick="copyShareUrl()" style="padding:7px 14px;background:#2B5BA8;color:#fff;border:none;border-radius:6px;font-size:12px;cursor:pointer;white-space:nowrap;">复制</button>
+      </div>
+    </div>
+    <div style="background:#FDF6EC;border:1px solid #F0D9B5;border-radius:8px;padding:12px;font-size:12px;color:#4A5068;line-height:1.6;">
+      💡 上传 Excel 时需要 GitHub Token，Token 仅存于本机浏览器。
+    </div>
+    <div style="text-align:right;margin-top:14px;">
+      <button onclick="closeModal()" style="padding:7px 16px;background:transparent;border:1px solid #D0D5E8;border-radius:6px;font-size:12px;cursor:pointer;color:#4A5068;">关闭</button>
+    </div>
+  `);
 }
 function hasData(){ return Object.values(DB).some(a=>a&&a.length); }
 function showShareBtn(){ const b=document.getElementById('share-btn'); if(b) b.style.display=''; }
@@ -598,10 +611,7 @@ async function saveDB(){
   }
 }
 
-function showTokenPrompt(){
-  // Open token modal instead of browser prompt (prompt() blocked on GitHub Pages)
-  setGHToken();
-}
+function showTokenPrompt(){ setGHToken(); }
 function loadDB(){
   // Clear all legacy localStorage data keys (keep gh_token)
   ['noah_bdi','noah_bdi2','noah_bdi3','noah_bdi4','noah_brand_store','noah_bdi_v2'].forEach(k=>{
@@ -661,32 +671,36 @@ async function confirmDeleteTask(idx){
 }
 function setGHToken(){
   const cur=getToken();
-  const curEl=document.getElementById('token-current');
-  if(curEl) curEl.textContent=cur?'当前 Token：'+cur.slice(0,8)+'…（已设置）':'当前：未设置';
-  const inp=document.getElementById('token-input');
-  if(inp) inp.value='';
-  document.getElementById('token-modal').style.display='flex';
+  const curDesc=cur?'当前 Token：'+cur.slice(0,8)+'… <span style="color:#16A34A">（已设置）</span>':'<span style="color:#8B92AD">当前：未设置</span>';
+  openModal(`
+    <div style="font-size:15px;font-weight:700;color:#1A1D2E;margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid #E4E7EF;">🔑 设置 GitHub Token</div>
+    <p style="font-size:13px;color:#4A5068;margin-bottom:8px;line-height:1.7;">Token 仅保存在<strong>本机浏览器</strong>中，不会上传到任何服务器。需要 <strong>repo</strong> 权限。</p>
+    <p style="font-size:12px;margin-bottom:14px;">${curDesc}</p>
+    <label style="font-size:12px;font-weight:600;color:#1A1D2E;display:block;margin-bottom:6px;">Personal Access Token</label>
+    <input id="token-input-dyn" type="password" placeholder="ghp_xxxxxxxxxxxxxx"
+      style="width:100%;background:#F5F6FA;border:1px solid #D0D5E8;border-radius:6px;padding:9px 12px;font-size:13px;font-family:monospace;color:#1A1D2E;outline:none;box-sizing:border-box;"
+      onfocus="this.style.borderColor='#2B5BA8'" onblur="this.style.borderColor='#D0D5E8'"
+      onkeydown="if(event.key==='Enter')saveTokenFromModal()">
+    <div style="display:flex;gap:8px;margin-top:14px;">
+      <button onclick="saveTokenFromModal()" style="flex:1;padding:9px;background:#2B5BA8;color:#fff;border:none;border-radius:6px;font-size:13px;cursor:pointer;">保存</button>
+      <button onclick="clearTokenFromModal()" style="padding:9px 14px;background:transparent;border:1px solid #D0D5E8;border-radius:6px;font-size:13px;cursor:pointer;color:#8B92AD;">清除 Token</button>
+      <button onclick="closeModal()" style="padding:9px 14px;background:transparent;border:1px solid #D0D5E8;border-radius:6px;font-size:13px;cursor:pointer;color:#4A5068;">取消</button>
+    </div>
+  `.replace('\${curDesc}', curDesc));
 }
 function saveTokenFromModal(){
-  const inp=document.getElementById('token-input');
+  const inp=document.getElementById('token-input-dyn');
   const val=(inp?inp.value:'').trim();
-  if(!val){ alert('请输入 Token'); return; }
+  if(!val){ if(inp){inp.style.borderColor='#DC2626';} return; }
   saveToken(val);
-  document.getElementById('token-modal').style.display='none';
-  // Show success in topbar
-  document.getElementById('last-update').textContent='Token 已保存，可以上传数据了';
-  setTimeout(()=>{
-    const upd=document.getElementById('last-update');
-    if(upd.textContent==='Token 已保存，可以上传数据了') upd.textContent='就绪';
-  },3000);
+  closeModal();
+  document.getElementById('last-update').textContent='✅ Token 已保存';
+  setTimeout(()=>{ const u=document.getElementById('last-update'); if(u&&u.textContent==='✅ Token 已保存') u.textContent='就绪'; },3000);
 }
 function clearTokenFromModal(){
   localStorage.removeItem('gh_token');
-  const inp=document.getElementById('token-input');
-  if(inp) inp.value='';
-  const curEl=document.getElementById('token-current');
-  if(curEl) curEl.textContent='当前：未设置';
-  document.getElementById('token-modal').style.display='none';
+  closeModal();
+  document.getElementById('last-update').textContent='Token 已清除';
 }
 function clearData(){
   const pwd=document.getElementById('clear-pwd-input');
@@ -746,9 +760,19 @@ function setRange(r,btn){
   document.getElementById('range-tag').textContent=label;
   renderAll();
 }
+function onFromDateChange(el){
+  // Set min date for end picker, then auto-open it
+  const dt=document.getElementById('dt');
+  if(dt){
+    dt.min=el.value;
+    // Auto-open end date picker after selecting start date
+    setTimeout(()=>{ try{ dt.showPicker(); }catch(e){ dt.focus(); } },100);
+  }
+}
 function applyCustom(){
   const f=document.getElementById('df').value, t=document.getElementById('dt').value;
-  if(f&&t){ range='custom'; customFrom=f; customTo=t;
+  if(f&&t){
+    range='custom'; customFrom=f; customTo=t;
     document.getElementById('range-tag').textContent=f+' → '+t;
     document.querySelectorAll('.tf-btn').forEach(b=>b.classList.remove('active'));
     renderAll();
