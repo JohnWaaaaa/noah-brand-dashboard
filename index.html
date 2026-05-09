@@ -867,13 +867,34 @@ function parseAndMerge(wb){
       else incoming[mod].push(rec);
     });
   });
-  // Only replace modules that appear in this upload — others keep existing data
-  // This allows each person to upload their own module independently
-  Object.keys(incoming).forEach(mod=>{
-    if(incoming[mod].length>0) DB[mod]=incoming[mod];
+  // Merge incoming records into existing DB by primary key:
+  // - Same primary key + same date → OVERWRITE (update existing record)
+  // - New primary key or new date → APPEND (add new record)
+  // - Existing records NOT in this upload → KEEP unchanged
+  // This allows multiple people to upload different channels/activities/tasks independently
+  const KF2={adflow:'channel',media:'channel',events:'name',ai:'platform',sentiment:'scope',strategy:'task'};
+  Object.keys(incoming).forEach(function(mod){
+    if(!incoming[mod] || !incoming[mod].length) return;
+    if(!DB[mod]) DB[mod]=[];
+    var kf=KF2[mod];
+    incoming[mod].forEach(function(newRec){
+      var kv=String(newRec[kf]||'');
+      // For strategy: match by task name only (no date key)
+      // For others: match by key + date
+      var idx;
+      if(mod==='strategy'){
+        idx=DB[mod].findIndex(function(r){ return String(r[kf]||'')=== kv; });
+      } else {
+        idx=DB[mod].findIndex(function(r){ return String(r[kf]||'')=== kv && r.date===newRec.date; });
+      }
+      if(idx>=0){
+        DB[mod][idx]=Object.assign({}, DB[mod][idx], newRec); // overwrite
+      } else {
+        DB[mod].push(newRec); // append
+      }
+    });
   });
-  // Show which modules were updated
-  const updated=Object.keys(incoming).filter(m=>incoming[m].length>0);
+  var updated=Object.keys(incoming).filter(function(m){ return incoming[m] && incoming[m].length>0; });
   return updated;
 }
 
